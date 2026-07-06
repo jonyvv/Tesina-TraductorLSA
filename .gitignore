@@ -1,0 +1,32 @@
+# Entornos virtuales
+.venv*/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Modelo de MediaPipe descargado (se genera con common/download_model.py)
+common/models/*.task
+
+# Modelos entrenados (se generan con ml/train.py / ml/train_dynamic_lstm.py)
+backend/models/*.joblib
+backend/models/*.pt
+backend/models/*.onnx
+
+# Dataset capturado (contiene datos de captura de personas — no versionar)
+data/sign_language_dataset/*.json
+
+# Reportes generados por el entrenamiento (matrices de confusión)
+ml/reports/*.png
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Mantener estructura de carpetas vacías en git
+!**/.gitkeep

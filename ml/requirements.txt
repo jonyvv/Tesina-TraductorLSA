@@ -1,0 +1,10 @@
+opencv-python>=4.9.0
+mediapipe>=0.10.9
+numpy>=1.26.0
+scikit-learn>=1.4.0
+joblib>=1.3.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Opcional, solo para ml/train_dynamic_lstm.py (fase 2, señas dinámicas):
+# torch>=2.2.0   (instalar según tu plataforma: https://pytorch.org/get-started/locally/)
