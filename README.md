@@ -72,9 +72,29 @@ python ml/capture_dataset.py --sujeto leandro --sesion 1 --luz "natural"
 
 # Entrenar (Random Forest + MLP, comparados) sobre las muestras estáticas
 python ml/train.py
+
+# Entrenar LSA64 desde carpeta, ZIP o URL directa
+python ml/train_lsa64.py --dataset-dir "C:\\ruta\\a\\LSA64"
+python ml/train_lsa64.py --dataset-archive "C:\\ruta\\a\\LSA64.zip"
+python ml/train_lsa64.py --download-url "https://tu-url-directa/LSA64.zip"
 ```
 
 Esto deja `backend/models/modelo_lse.joblib` listo para que lo cargue el backend.
+
+Si vas a usar LSA64, el flujo recomendado es organizar los videos por clase o
+pasar un CSV de anotaciones con columnas `video,label,subject` y, de ser
+posible, `split`. Ese script genera un modelo secuencial `.pt` pensado para
+señas/palabras, no para el abecedario. Para letras sigue usando `ml/train.py`
+con tus propias capturas.
+
+La implementación de LSA64 quedó separada en `ml/lsa64/` para mantener el
+entrypoint chico y dejar cada responsabilidad en su módulo. Si usás
+`--dataset-archive` o `--download-url`, el script descarga/extráe y entrena en
+un solo paso.
+
+El backend ahora detecta automáticamente `backend/models/modelo_lsa64_lstm.pt`
+si existe; si no, sigue usando `modelo_lse.joblib`. Para servir el `.pt`
+necesitás instalar `torch` en el entorno del backend.
 
 ### 2. Backend
 
@@ -110,7 +130,7 @@ backend, y la clase `TraductorService` con suavizado):
 - [x] Backend FastAPI con WebSocket, siguiendo el diagrama de clases y de secuencia; arranca de forma robusta aunque falten el modelo de MediaPipe o el modelo entrenado (ver `/health`).
 - [x] Entrenamiento comparado Random Forest vs. MLP para señas estáticas (abecedario), con split agrupado por sesión (`GroupShuffleSplit`/`GroupKFold`) para evitar fuga de datos.
 - [x] Frontend funcional (cámara + overlay + texto traducido).
-- [ ] Modelo dinámico (LSTM) servido en producción — hoy solo se entrena (`train_dynamic_lstm.py`), falta integrarlo a `ModeloLSE`/`TraductorService`.
+- [x] Modelo dinámico (LSTM) servido en backend con ventana temporal y carga automática del `.pt`.
 - [ ] Dataset propio real (este scaffold no incluye datos, hay que capturarlos).
 - [ ] Deploy en Render/Railway/GCP con Docker.
 - [ ] Validación de usabilidad con usuarios reales de LSA.

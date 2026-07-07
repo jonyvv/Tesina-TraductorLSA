@@ -150,12 +150,10 @@ práctica (ver el análisis del repo previo). Acá se separan desde el diseño:
 - **Estático** (abecedario): un vector de 138 valores por muestra → `ml/train.py` → RandomForest / MLP.
 - **Dinámico** (palabras con movimiento): una secuencia de vectores de 138 valores → `ml/train_dynamic_lstm.py` → LSTM bidireccional.
 
-El backend (`ModeloLSE`) hoy sirve el modelo estático. Servir también el
-modelo dinámico requiere agregar una segunda instancia de `ModeloLSE` (o una
-subclase) que mantenga una ventana deslizante de frames por sesión de
-WebSocket antes de predecir — el `TraductorService` ya tiene la estructura
-para extenderse así (el buffer de suavizado es conceptualmente parecido al
-buffer que necesitaría el modelo dinámico).
+El backend (`ModeloLSE`) sirve el modelo estático o el dinámico según el
+archivo que se cargue. Si existe `backend/models/modelo_lsa64_lstm.pt`, el
+servidor usa ese artefacto y `TraductorService` acumula una ventana deslizante
+de frames antes de predecir. Si no, sigue usando `modelo_lse.joblib`.
 
 ## 6. Alternativa de arquitectura a evaluar: landmarks en el cliente
 
@@ -187,15 +185,15 @@ modelo, migrar no implica tocar `TraductorService`, `WebSocketHandler` ni el
 frontend:
 
 1. Entrenar el nuevo modelo (`ml/train.py` ya entrena y compara MLP vs. RF; para CNN/LSTM ver `ml/train_dynamic_lstm.py` como punto de partida).
-2. Exportar a un formato que `ModeloLSE.cargar()` sepa leer. Para mantener todo en `.joblib` con scikit-learn (MLP) no hace falta cambiar nada. Para PyTorch/TensorFlow, se agrega una rama en `cargar()`/`predecir()` (o una subclase `ModeloLSEtorch`) que cargue `.pt`/`.h5`/`.onnx` en vez de `.joblib`.
-3. `backend/app/main.py` apunta `RUTA_MODELO` al nuevo archivo. Nada más cambia.
+2. Exportar el checkpoint `.pt` con los metadatos esperados por `backend/app/modelos/torch_adapter.py` (`label_classes`, `feature_version`, `feature_vector_length`, `hidden_size`, `min_seq_len`, `model_state_dict`).
+3. `backend/app/main.py` detecta automáticamente `backend/models/modelo_lsa64_lstm.pt` si existe; si no, cae al `.joblib`.
 
 ## 8. Deploy
 
 Conforme a las limitaciones del anteproyecto (capa gratuita de Render/Railway/GCP):
 
 - **Backend**: contenedor Docker con `backend/requirements.txt`, expone `/health`, `/model/info` y `/ws/translate`. `main.py` ya sirve el frontend estático desde la misma app (`StaticFiles`), así que un solo servicio cubre todo — importante para no gastar dos slots de la capa gratuita.
-- **Modelo**: se versiona junto al backend (`backend/models/modelo_lse.joblib`), no se entrena en producción.
+- **Modelo**: se versiona junto al backend (`backend/models/modelo_lse.joblib` o `backend/models/modelo_lsa64_lstm.pt`), no se entrena en producción.
 - **CORS**: restringir `allow_origins` al dominio real antes de la entrega final (hoy está en `"*"` para desarrollo).
 
 ## 9. Experimentos sugeridos para la tesina

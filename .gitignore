@@ -27,6 +27,6 @@ ml/reports/*.png
 # Sistema
 .DS_Store
 Thumbs.db
-
+.lsa64_cache
 # Mantener estructura de carpetas vacías en git
 !**/.gitkeep

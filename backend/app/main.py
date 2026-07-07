@@ -12,6 +12,7 @@ Correr con:
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket
@@ -27,7 +28,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lsa.main")
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-RUTA_MODELO = BASE_DIR / "backend" / "models" / "modelo_lse.joblib"
+MODELS_DIR = BASE_DIR / "backend" / "models"
+RUTA_MODELO = Path(
+    os.getenv("LSA_MODEL_PATH")
+    or (MODELS_DIR / "modelo_lsa64_lstm.pt" if (MODELS_DIR / "modelo_lsa64_lstm.pt").exists() else MODELS_DIR / "modelo_lse.joblib")
+)
 UMBRAL_CONFIANZA = 0.6
 
 app = FastAPI(title="Traductor LSA API", version="0.1.0")
@@ -73,7 +78,7 @@ def inicializar() -> None:
     except (FileNotFoundError, RuntimeError) as exc:
         logger.warning(
             "%s\nEl backend arrancará igual, pero /ws/translate va a fallar "
-            "hasta que exista un modelo entrenado (ver ml/train.py).",
+            "hasta que exista un modelo entrenado (ver ml/train.py o ml/train_lsa64.py).",
             exc,
         )
 
