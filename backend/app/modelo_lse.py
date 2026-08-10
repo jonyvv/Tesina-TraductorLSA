@@ -52,15 +52,22 @@ class ModeloLSE:
             )
 
         data = joblib.load(path)
-        self.model = data["model"]
-        self.label_encoder = data["label_encoder"]
-        self.clases = list(self.label_encoder.classes_)
-        self.feature_version_entrenamiento = data.get("feature_version", "desconocida")
 
-        if self.feature_version_entrenamiento != FEATURE_VERSION:
+        # IMPORTANTE: validar TODO antes de tocar `self`. Si se asigna
+        # `self.model` primero y después una validación falla, el modelo queda
+        # cargado igual: /health reporta `modelo_cargado: true`, `predecir()`
+        # funciona, y el backend termina sirviendo justo el modelo que se acaba
+        # de rechazar. O sea, los chequeos no protegían nada. Se arma todo en
+        # variables locales y recién al final se compromete el estado.
+        model = data["model"]
+        label_encoder = data["label_encoder"]
+        clases = list(label_encoder.classes_)
+        version_entrenamiento = data.get("feature_version", "desconocida")
+
+        if version_entrenamiento != FEATURE_VERSION:
             raise RuntimeError(
                 f"Desalineación de esquema de features: el modelo fue entrenado con "
-                f"'{self.feature_version_entrenamiento}' pero el backend usa "
+                f"'{version_entrenamiento}' pero el backend usa "
                 f"'{FEATURE_VERSION}'. Re-entrená el modelo con ml/train.py."
             )
 
@@ -71,16 +78,81 @@ class ModeloLSE:
                 f"backend genera vectores de longitud {FEATURE_VECTOR_LENGTH}."
             )
 
+        # Chequeo de sanidad: que el modelo haya visto TODAS las clases del
+        # LabelEncoder durante el entrenamiento. Si el split de train/test dejó
+        # alguna clase entera fuera del set de entrenamiento (pasa cuando cada
+        # etiqueta se capturó en una sola sesión y el split agrupa por sesión),
+        # el modelo queda entrenado con menos clases de las que dice tener y
+        # predice siempre lo mismo, con confianza 1.0 y sin ningún error visible.
+        # Preferimos fallar acá, en el arranque, que servir eso en la demo.
+        clases_vistas = getattr(model, "classes_", None)
+        if clases_vistas is not None and len(clases_vistas) < len(clases):
+            vistas = {int(c) for c in clases_vistas}
+            faltantes = [c for i, c in enumerate(clases) if i not in vistas]
+            raise RuntimeError(
+                f"El modelo fue entrenado con solo {len(clases_vistas)} de las "
+                f"{len(clases)} clases del dataset. Nunca va a poder predecir: "
+                f"{faltantes}.\n"
+                f"Causa típica: cada etiqueta fue capturada en una sola sesión, así "
+                f"que el split agrupado por sujeto+sesión separó por CLASE en vez de "
+                f"por sesión. Capturá cada seña en al menos 2 sesiones distintas y "
+                f"volvé a correr ml/train.py."
+            )
+
+        # Las columnas de `predict_proba` tienen que corresponderse 1 a 1 con
+        # `model.classes_`; `_etiqueta_de_indice` depende de esa correspondencia.
+        # No siempre se cumple: MLPClassifier entrenado con una sola clase
+        # devuelve DOS columnas y un `classes_` de un elemento, y ahí el argmax
+        # puede indexar fuera de rango en pleno WebSocket. Se comprueba acá, con
+        # un vector de prueba, para que falle en el arranque y no en la demo.
+        try:
+            n_columnas = len(model.predict_proba([np.zeros(FEATURE_VECTOR_LENGTH,
+                                                           dtype=np.float32)])[0])
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(
+                f"El modelo no pudo predecir sobre un vector de prueba de "
+                f"longitud {FEATURE_VECTOR_LENGTH}: {exc}"
+            ) from exc
+
+        if n_columnas != len(clases_vistas if clases_vistas is not None else clases):
+            raise RuntimeError(
+                f"El modelo devuelve {n_columnas} probabilidades pero declara "
+                f"{len(clases_vistas)} clase(s). Traducir la predicción a una "
+                f"etiqueta sería adivinar.\n"
+                f"Causa típica: se entrenó un MLPClassifier con una sola clase. "
+                f"Entrená con al menos dos señas distintas (ver ml/train.py)."
+            )
+
+        # Todo validado: recién ahora el modelo pasa a estar disponible.
+        self.model = model
+        self.label_encoder = label_encoder
+        self.clases = clases
+        self.feature_version_entrenamiento = version_entrenamiento
+
+    def _etiqueta_de_indice(self, idx_columna: int) -> str:
+        """Traduce un índice de COLUMNA de `predict_proba` a la etiqueta real.
+
+        Ojo: las columnas de `predict_proba` corresponden a `model.classes_`, NO a
+        `0..n-1`. Coinciden solo si el modelo vio todas las clases al entrenar; si
+        vio un subconjunto, indexar el LabelEncoder directamente con el argmax
+        devuelve la etiqueta EQUIVOCADA (sin error, solo mal). Por eso siempre
+        pasamos por `model.classes_` primero.
+        """
+        clase_codificada = self.model.classes_[idx_columna]
+        return str(self.label_encoder.inverse_transform([clase_codificada])[0])
+
     def predecir(self, features: np.ndarray) -> Prediccion:
         if self.model is None:
             raise RuntimeError("Llamá a cargar() antes de predecir()")
 
         probas = self.model.predict_proba([features])[0]
         idx = int(np.argmax(probas))
-        confianza = float(probas[idx])
-        etiqueta = self.label_encoder.inverse_transform([idx])[0]
 
-        return Prediccion(etiqueta=str(etiqueta), confianza=confianza, umbral=self.umbral_confianza)
+        return Prediccion(
+            etiqueta=self._etiqueta_de_indice(idx),
+            confianza=float(probas[idx]),
+            umbral=self.umbral_confianza,
+        )
 
     def top_n(self, features: np.ndarray, n: int = 3) -> list[Prediccion]:
         """Devuelve las n predicciones más probables, útil para debugging y para
@@ -91,8 +163,11 @@ class ModeloLSE:
 
         probas = self.model.predict_proba([features])[0]
         top_idx = np.argsort(probas)[::-1][:n]
-        etiquetas = self.label_encoder.inverse_transform(top_idx)
         return [
-            Prediccion(etiqueta=str(etq), confianza=float(probas[i]), umbral=self.umbral_confianza)
-            for etq, i in zip(etiquetas, top_idx)
+            Prediccion(
+                etiqueta=self._etiqueta_de_indice(int(i)),
+                confianza=float(probas[i]),
+                umbral=self.umbral_confianza,
+            )
+            for i in top_idx
         ]

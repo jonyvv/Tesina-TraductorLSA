@@ -12,6 +12,8 @@ Correr con:
 from __future__ import annotations
 
 import logging
+import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket
@@ -23,6 +25,9 @@ from .preprocesador import Preprocesador
 from .traductor_service import TraductorService
 from .websocket_handler import WebSocketHandler
 
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+from common.features import HAND_CONNECTIONS  # noqa: E402
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lsa.main")
 
@@ -30,30 +35,18 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 RUTA_MODELO = BASE_DIR / "backend" / "models" / "modelo_lse.joblib"
 UMBRAL_CONFIANZA = 0.6
 
-app = FastAPI(title="Traductor LSA API", version="0.1.0")
-
-# En desarrollo, permitir cualquier origen. En producción, restringir al dominio
-# real del frontend (ver docs/ARQUITECTURA.md, sección Deploy).
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # --- Construcción de dependencias (equivalente al "carga modelo" del diagrama) ---
 # Nota: tanto `Preprocesador` (requiere el archivo hand_landmarker.task, ver
 # common/download_model.py) como `ModeloLSE` (requiere el .joblib entrenado)
 # pueden no estar disponibles todavía en un checkout nuevo del proyecto. El
 # arranque del servidor NO debe fallar por eso -> se resuelven de forma
-# perezosa en el evento startup, y /health refleja el estado real.
+# perezosa al iniciar, y /health refleja el estado real.
 preprocesador: Preprocesador | None = None
 modelo = ModeloLSE(ruta_modelo=str(RUTA_MODELO), umbral_confianza=UMBRAL_CONFIANZA)
 traductor_service: TraductorService | None = None
 ws_handler: WebSocketHandler | None = None
 
 
-@app.on_event("startup")
 def inicializar() -> None:
     global preprocesador, traductor_service, ws_handler
 
@@ -73,13 +66,37 @@ def inicializar() -> None:
     except (FileNotFoundError, RuntimeError) as exc:
         logger.warning(
             "%s\nEl backend arrancará igual, pero /ws/translate va a fallar "
-            "hasta que exista un modelo entrenado (ver ml/train.py).",
+            "hasta que exista un modelo entrenado válido (ver ml/train.py).",
             exc,
         )
 
     if preprocesador is not None:
         traductor_service = TraductorService(preprocesador=preprocesador, modelo=modelo)
         ws_handler = WebSocketHandler(servicio=traductor_service)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # `@app.on_event("startup")` está deprecado en FastAPI; el reemplazo es este
+    # context manager, que además da un lugar explícito para liberar recursos al
+    # apagar (MediaPipe mantiene handles nativos abiertos).
+    inicializar()
+    yield
+    if preprocesador is not None:
+        preprocesador.close()
+        logger.info("Preprocesador liberado.")
+
+
+app = FastAPI(title="Traductor LSA API", version="0.1.0", lifespan=lifespan)
+
+# En desarrollo, permitir cualquier origen. En producción, restringir al dominio
+# real del frontend (ver docs/ARQUITECTURA.md, sección Deploy).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
@@ -99,6 +116,11 @@ def model_info() -> dict:
         "clases": modelo.clases,
         "umbral_confianza": modelo.umbral_confianza,
         "feature_version": modelo.feature_version_entrenamiento,
+        # El frontend dibuja el esqueleto de la mano con estas conexiones. Se
+        # sirven desde acá en vez de hardcodearlas en el JS para que haya una
+        # sola definición del esqueleto en todo el proyecto (misma razón por la
+        # que existe common/: si cambia, no puede quedar desincronizado).
+        "conexiones_mano": HAND_CONNECTIONS,
     }
 
 

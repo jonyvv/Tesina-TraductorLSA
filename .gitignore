@@ -6,6 +6,7 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
 
 # Modelo de MediaPipe descargado (se genera con common/download_model.py)
 common/models/*.task

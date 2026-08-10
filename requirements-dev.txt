@@ -1,0 +1,8 @@
+# Dependencias solo para correr los tests (tests/).
+# Las de ejecución están en ml/requirements.txt y backend/requirements.txt.
+
+-r ml/requirements.txt
+-r backend/requirements.txt
+
+pytest>=8.0.0
+httpx2>=0.28.0   # requerido por starlette.testclient para probar el backend

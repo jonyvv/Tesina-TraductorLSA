@@ -3,424 +3,235 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Traductor de Lengua de Señas Argentina en tiempo real mediante visión por computadora." />
 <title>Traductor LSA · Tiempo real</title>
-<style>
-  :root {
-    --bg: #0b0f14;
-    --panel: #121822;
-    --panel-border: #1f2937;
-    --accent: #5eead4;
-    --accent-dim: #2dd4bf33;
-    --text: #e6edf3;
-    --text-dim: #8b98a5;
-    --danger: #f87171;
-    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 16px 64px;
-  }
-
-  header {
-    width: 100%;
-    max-width: 960px;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  h1 {
-    font-size: 1.15rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    margin: 0;
-  }
-
-  h1 span { color: var(--accent); }
-
-  .estado {
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .punto {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--danger);
-    display: inline-block;
-    transition: background 0.2s ease;
-  }
-  .punto.conectado { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-
-  main {
-    width: 100%;
-    max-width: 960px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .video-wrap {
-    position: relative;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    overflow: hidden;
-    aspect-ratio: 4 / 3;
-  }
-
-  video, canvas.overlay {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  video { transform: scaleX(-1); } /* efecto espejo */
-
-  .hud {
-    position: absolute;
-    left: 16px;
-    bottom: 16px;
-    right: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    pointer-events: none;
-  }
-
-  .seña-actual {
-    font-family: var(--mono);
-    background: rgba(11, 15, 20, 0.72);
-    border: 1px solid var(--panel-border);
-    border-radius: 10px;
-    padding: 10px 16px;
-    min-width: 140px;
-  }
-
-  .seña-actual .label {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    margin-bottom: 4px;
-  }
-
-  .seña-actual .valor {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--accent);
-    min-height: 1.6rem;
-  }
-
-  .seña-actual .conf {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
-
-  .controles {
-    display: flex;
-    gap: 10px;
-    margin-top: 4px;
-  }
-
-  button {
-    font-family: var(--sans);
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 10px 18px;
-    border-radius: 8px;
-    border: 1px solid var(--panel-border);
-    background: var(--panel);
-    color: var(--text);
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
-  }
-
-  button.primary {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  button:not(:disabled):hover { border-color: var(--accent); }
-
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 18px 20px;
-  }
-
-  .panel h2 {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    margin: 0 0 12px;
-  }
-
-  #texto-traducido {
-    font-family: var(--mono);
-    font-size: 1rem;
-    line-height: 1.6;
-    min-height: 3.2em;
-    color: var(--text);
-    word-wrap: break-word;
-  }
-
-  #texto-traducido .cursor {
-    display: inline-block;
-    width: 8px;
-    height: 1em;
-    background: var(--accent);
-    vertical-align: text-bottom;
-    animation: parpadeo 1s step-start infinite;
-  }
-
-  @keyframes parpadeo { 50% { opacity: 0; } }
-
-  .fila-panel {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
-
-  small.nota {
-    color: var(--text-dim);
-    font-size: 0.72rem;
-  }
-</style>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<header>
-  <h1>Traductor <span>LSA</span> · tiempo real</h1>
-  <div class="estado">
-    <span class="punto" id="punto-estado"></span>
-    <span id="texto-estado">desconectado</span>
+<a class="salto-contenido" href="#contenido">Saltar al contenido principal</a>
+
+<header class="cabecera">
+  <div class="cabecera__marca">
+    <h1 class="titulo">Traductor <span class="titulo__acento">LSA</span></h1>
+    <p class="subtitulo">Reconocimiento de Lengua de Señas Argentina en tiempo real</p>
+  </div>
+
+  <div class="cabecera__acciones">
+    <p class="estado" id="estado" role="status">
+      <span class="estado__punto" id="estado-punto" aria-hidden="true"></span>
+      <span id="estado-texto">Desconectado</span>
+    </p>
+    <button type="button" id="btn-tema" class="boton boton--icono"
+            aria-label="Cambiar entre tema claro y oscuro">
+      <span aria-hidden="true" id="btn-tema-icono">◐</span>
+    </button>
   </div>
 </header>
 
-<main>
+<main id="contenido" class="disposicion">
 
-  <div class="video-wrap">
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="overlay" class="overlay"></canvas>
-    <div class="hud">
-      <div class="seña-actual">
-        <div class="label">Seña detectada</div>
-        <div class="valor" id="seña-valor">—</div>
-        <div class="conf" id="seña-conf">confianza: —</div>
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Columna principal: video + overlay                                -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="panel panel--video" aria-labelledby="titulo-camara">
+    <h2 id="titulo-camara" class="visualmente-oculto">Cámara y detección</h2>
+
+    <div class="video-marco" id="video-marco">
+      <video id="video" autoplay playsinline muted
+             aria-label="Vista de la cámara web"></video>
+      <!-- El overlay es decorativo: toda la información que transmite está
+           también disponible como texto en el panel de detección. -->
+      <canvas id="overlay" class="video-marco__overlay" aria-hidden="true"></canvas>
+
+      <div class="video-marco__vacio" id="camara-apagada">
+        <p class="vacio__icono" aria-hidden="true">◎</p>
+        <p class="vacio__titulo">La cámara está apagada</p>
+        <p class="vacio__texto">Iniciá la cámara para comenzar a traducir.</p>
+      </div>
+
+      <output class="hud" id="hud" for="video">
+        <span class="hud__etiqueta">Seña detectada</span>
+        <strong class="hud__valor" id="hud-seña">—</strong>
+      </output>
+    </div>
+
+    <div class="controles" role="group" aria-label="Controles de la cámara">
+      <button type="button" id="btn-iniciar" class="boton boton--primario">
+        Iniciar cámara
+      </button>
+      <button type="button" id="btn-detener" class="boton" disabled>
+        Detener
+      </button>
+    </div>
+
+    <p class="aviso aviso--error" id="aviso-error" role="alert" hidden></p>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Columna lateral: métricas                                         -->
+  <!-- ---------------------------------------------------------------- -->
+  <aside class="columna-lateral">
+
+    <section class="panel" aria-labelledby="titulo-deteccion">
+      <h2 id="titulo-deteccion" class="panel__titulo">Detección</h2>
+
+      <dl class="metricas">
+        <div class="metrica">
+          <dt class="metrica__nombre">
+            Confianza
+            <span class="con-ayuda">
+              <button type="button" class="ayuda" aria-describedby="ayuda-confianza">
+                <span aria-hidden="true">?</span>
+                <span class="visualmente-oculto">Ayuda sobre la confianza</span>
+              </button>
+              <span class="ayuda__globo" id="ayuda-confianza" role="tooltip">
+                Probabilidad que le asigna el modelo a la seña reconocida.
+              </span>
+            </span>
+          </dt>
+          <dd class="metrica__valor">
+            <div class="barra" role="progressbar" id="barra-confianza"
+                 aria-labelledby="titulo-deteccion"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                 aria-valuetext="Confianza: sin datos">
+              <div class="barra__relleno" id="barra-confianza-relleno"></div>
+            </div>
+            <span class="metrica__numero" id="valor-confianza">—</span>
+          </dd>
+        </div>
+
+        <div class="metrica">
+          <dt class="metrica__nombre">
+            Estabilidad
+            <span class="con-ayuda">
+              <button type="button" class="ayuda" aria-describedby="ayuda-estabilidad">
+                <span aria-hidden="true">?</span>
+                <span class="visualmente-oculto">Ayuda sobre la estabilidad</span>
+              </button>
+              <span class="ayuda__globo" id="ayuda-estabilidad" role="tooltip">
+                Qué tan consistente fue la detección en los últimos cuadros.
+              </span>
+            </span>
+          </dt>
+          <dd class="metrica__valor">
+            <div class="barra" role="progressbar" id="barra-estabilidad"
+                 aria-labelledby="titulo-deteccion"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                 aria-valuetext="Estabilidad: sin datos">
+              <div class="barra__relleno" id="barra-estabilidad-relleno"></div>
+            </div>
+            <span class="metrica__numero" id="valor-estabilidad">—</span>
+          </dd>
+        </div>
+
+        <div class="metrica metrica--simple">
+          <dt class="metrica__nombre">Manos detectadas</dt>
+          <dd class="metrica__numero" id="valor-manos">—</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-rendimiento">
+      <h2 id="titulo-rendimiento" class="panel__titulo">Rendimiento</h2>
+
+      <dl class="metricas metricas--grilla">
+        <div class="metrica metrica--simple">
+          <dt class="metrica__nombre">Latencia total</dt>
+          <dd class="metrica__numero" id="valor-latencia">—</dd>
+        </div>
+        <div class="metrica metrica--simple">
+          <dt class="metrica__nombre">Cómputo servidor</dt>
+          <dd class="metrica__numero" id="valor-servidor">—</dd>
+        </div>
+        <div class="metrica metrica--simple">
+          <dt class="metrica__nombre">Red + codificación</dt>
+          <dd class="metrica__numero" id="valor-red">—</dd>
+        </div>
+        <div class="metrica metrica--simple">
+          <dt class="metrica__nombre">Frames por segundo</dt>
+          <dd class="metrica__numero" id="valor-fps">—</dd>
+        </div>
+      </dl>
+
+      <p class="nota">
+        Medido sobre las últimas 30 respuestas.
+        <span class="nota__tenue">La latencia total es el round-trip completo desde el navegador.</span>
+      </p>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-opciones">
+      <h2 id="titulo-opciones" class="panel__titulo">Opciones</h2>
+
+      <div class="opcion">
+        <label class="opcion__control" for="chk-overlay">
+          <input type="checkbox" id="chk-overlay" checked />
+          <span>Mostrar esqueleto de la mano</span>
+        </label>
+      </div>
+
+      <div class="opcion">
+        <label class="opcion__control" for="chk-autoescribir">
+          <input type="checkbox" id="chk-autoescribir" checked />
+          <span>Agregar señas al texto automáticamente</span>
+        </label>
+      </div>
+
+      <div class="opcion">
+        <label class="opcion__etiqueta" for="rango-fps">
+          Frecuencia de envío
+          <output class="opcion__salida" id="salida-fps" for="rango-fps">8 fps</output>
+        </label>
+        <input type="range" id="rango-fps" min="2" max="15" step="1" value="8"
+               aria-describedby="ayuda-fps" />
+        <p class="nota nota__tenue" id="ayuda-fps">
+          Menos cuadros por segundo reducen el uso de CPU y de ancho de banda.
+        </p>
+      </div>
+    </section>
+
+  </aside>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- Texto traducido                                                   -->
+  <!-- ---------------------------------------------------------------- -->
+  <section class="panel panel--ancho" aria-labelledby="titulo-texto">
+    <div class="panel__cabecera">
+      <h2 id="titulo-texto" class="panel__titulo">Texto traducido</h2>
+      <div class="panel__acciones">
+        <button type="button" id="btn-copiar" class="boton boton--chico" disabled>
+          Copiar
+        </button>
+        <button type="button" id="btn-deshacer" class="boton boton--chico" disabled>
+          Borrar última
+        </button>
+        <button type="button" id="btn-limpiar" class="boton boton--chico" disabled>
+          Limpiar
+        </button>
       </div>
     </div>
-  </div>
 
-  <div class="controles">
-    <button id="btn-iniciar" class="primary">Iniciar cámara</button>
-    <button id="btn-detener" disabled>Detener</button>
-    <button id="btn-limpiar">Limpiar texto</button>
-  </div>
-
-  <div class="panel">
-    <h2>Texto traducido</h2>
-    <div id="texto-traducido"><span class="cursor"></span></div>
-  </div>
-
-  <div class="panel">
-    <div class="fila-panel">
-      <h2 style="margin:0">Conexión</h2>
-      <small class="nota" id="nota-conexion">ws://localhost:8000/ws/translate</small>
-    </div>
-  </div>
+    <!-- aria-live="polite": solo cambia cuando se confirma una seña nueva, así
+         que un lector de pantalla lo puede anunciar sin resultar invasivo. Las
+         métricas, que se actualizan ~8 veces por segundo, quedan fuera de
+         cualquier región viva a propósito. -->
+    <p class="texto-traducido" id="texto-traducido" aria-live="polite" aria-atomic="false">
+      <span class="texto-traducido__vacio" id="texto-vacio">
+        Las señas reconocidas van a aparecer acá.
+      </span>
+    </p>
+  </section>
 
 </main>
 
-<script>
-  // ---------------------------------------------------------------------
-  // Configuración
-  // ---------------------------------------------------------------------
-  const WS_URL = (location.protocol === "https:" ? "wss://" : "ws://") +
-                 location.host + "/ws/translate";
-  const INTERVALO_ENVIO_MS = 120; // ~8 fps hacia el backend, suficiente para landmarks
-  const JPEG_QUALITY = 0.7;
+<footer class="pie">
+  <p>
+    Tesina · Licenciatura en Sistemas de Información
+    <span class="pie__separador" aria-hidden="true">·</span>
+    <span class="nota__tenue" id="pie-conexion">—</span>
+  </p>
+</footer>
 
-  document.getElementById("nota-conexion").textContent = WS_URL;
-
-  // ---------------------------------------------------------------------
-  // Estado
-  // ---------------------------------------------------------------------
-  const video = document.getElementById("video");
-  const overlay = document.getElementById("overlay");
-  const ctx = overlay.getContext("2d");
-  const btnIniciar = document.getElementById("btn-iniciar");
-  const btnDetener = document.getElementById("btn-detener");
-  const btnLimpiar = document.getElementById("btn-limpiar");
-  const señaValor = document.getElementById("seña-valor");
-  const señaConf = document.getElementById("seña-conf");
-  const textoTraducido = document.getElementById("texto-traducido");
-  const puntoEstado = document.getElementById("punto-estado");
-  const textoEstado = document.getElementById("texto-estado");
-
-  let ws = null;
-  let stream = null;
-  let intervaloEnvio = null;
-  let ultimaSeñaConfirmada = null;
-  const captureCanvas = document.createElement("canvas");
-  const captureCtx = captureCanvas.getContext("2d");
-
-  function setEstado(conectado, mensaje) {
-    puntoEstado.classList.toggle("conectado", conectado);
-    textoEstado.textContent = mensaje;
-  }
-
-  // ---------------------------------------------------------------------
-  // Cámara
-  // ---------------------------------------------------------------------
-  async function iniciarCamara() {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 960 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      video.srcObject = stream;
-      await video.play();
-
-      overlay.width = video.videoWidth || 960;
-      overlay.height = video.videoHeight || 720;
-      captureCanvas.width = 480; // reducimos resolución de envío para no saturar el WS
-      captureCanvas.height = Math.round(480 * (video.videoHeight / video.videoWidth));
-
-      conectarWebSocket();
-      btnIniciar.disabled = true;
-      btnDetener.disabled = false;
-    } catch (err) {
-      setEstado(false, "no se pudo acceder a la cámara");
-      console.error(err);
-    }
-  }
-
-  function detenerCamara() {
-    if (intervaloEnvio) clearInterval(intervaloEnvio);
-    if (ws) ws.close();
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-    video.srcObject = null;
-    setEstado(false, "desconectado");
-    btnIniciar.disabled = false;
-    btnDetener.disabled = true;
-    señaValor.textContent = "—";
-    señaConf.textContent = "confianza: —";
-  }
-
-  // ---------------------------------------------------------------------
-  // WebSocket
-  // ---------------------------------------------------------------------
-  function conectarWebSocket() {
-    ws = new WebSocket(WS_URL);
-    ws.binaryType = "arraybuffer";
-
-    ws.onopen = () => {
-      setEstado(true, "conectado");
-      intervaloEnvio = setInterval(enviarFrame, INTERVALO_ENVIO_MS);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        actualizarUI(data);
-      } catch (e) {
-        console.error("Respuesta inválida del backend:", event.data);
-      }
-    };
-
-    ws.onclose = () => {
-      setEstado(false, "desconectado");
-      if (intervaloEnvio) clearInterval(intervaloEnvio);
-    };
-
-    ws.onerror = (err) => {
-      console.error("Error de WebSocket:", err);
-    };
-  }
-
-  function enviarFrame() {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-
-    captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-    captureCanvas.toBlob(
-      (blob) => {
-        if (blob) blob.arrayBuffer().then((buf) => ws.send(buf));
-      },
-      "image/jpeg",
-      JPEG_QUALITY
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------------------
-  function actualizarUI(data) {
-    if (data.error) {
-      señaValor.textContent = "error";
-      señaConf.textContent = data.error;
-      return;
-    }
-
-    const seña = data["seña"];
-    const confianza = data["confianza"] ?? 0;
-    const valida = data["valida"];
-
-    señaValor.textContent = seña || "—";
-    señaConf.textContent = `confianza: ${(confianza * 100).toFixed(0)}%`;
-
-    if (valida && seña && seña !== ultimaSeñaConfirmada) {
-      ultimaSeñaConfirmada = seña;
-      agregarAlTexto(seña);
-    }
-    if (!valida) {
-      ultimaSeñaConfirmada = null; // permite repetir la misma seña si se suelta y se vuelve a hacer
-    }
-  }
-
-  function agregarAlTexto(seña) {
-    const cursor = textoTraducido.querySelector(".cursor");
-    const nodo = document.createTextNode(seña.length === 1 ? seña : " " + seña + " ");
-    textoTraducido.insertBefore(nodo, cursor);
-  }
-
-  function limpiarTexto() {
-    textoTraducido.innerHTML = '<span class="cursor"></span>';
-    ultimaSeñaConfirmada = null;
-  }
-
-  btnIniciar.addEventListener("click", iniciarCamara);
-  btnDetener.addEventListener("click", detenerCamara);
-  btnLimpiar.addEventListener("click", limpiarTexto);
-  window.addEventListener("beforeunload", detenerCamara);
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>

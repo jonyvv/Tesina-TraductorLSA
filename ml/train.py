@@ -142,15 +142,74 @@ def main() -> None:
         print("[!] Advertencia: alguna clase tiene menos de 5 muestras. "
               "Los resultados no van a ser confiables todavía.")
 
+    # --- Chequeo: hacen falta al menos 2 clases ---
+    # Un clasificador entrenado con una sola clase no clasifica nada: responde
+    # siempre esa etiqueta, con confianza 1.0, para cualquier entrada. Además
+    # rompe de formas silenciosas: MLPClassifier con una sola clase devuelve un
+    # `predict_proba` de DOS columnas pero un `classes_` de UN elemento, así que
+    # el backend puede indexar fuera de rango al traducir el argmax a etiqueta.
+    if len(conteo) < 2:
+        unica = next(iter(conteo))
+        print(
+            f"\n[ERROR] El dataset tiene una sola seña ('{unica}').\n\n"
+            f"Un clasificador necesita al menos dos clases para poder distinguir\n"
+            f"algo: con una sola, el modelo responde siempre '{unica}' con\n"
+            f"confianza 1.0 ante cualquier mano que vea, incluso una que no esté\n"
+            f"haciendo esa seña. No sirve ni para probar el sistema de punta a\n"
+            f"punta, porque no se puede saber si acierta o si siempre dice lo mismo.\n\n"
+            f"Capturá una segunda seña (bien distinta de la primera, para que la\n"
+            f"diferencia sea clara) y volvé a correr este script.\n\n"
+            f"No se entrenó ningún modelo."
+        )
+        sys.exit(1)
+
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y_raw)
     clases = list(label_encoder.classes_)
+
+    # --- Chequeo previo: ¿el dataset permite un split agrupado sano? ---
+    # El split agrupa por sujeto+sesión para evitar fuga de datos. Pero si una
+    # etiqueta se capturó en UNA SOLA sesión, esa etiqueta entera cae toda de un
+    # lado del split: o queda fuera del entrenamiento (el modelo nunca la
+    # aprende) o fuera del test (no se puede evaluar). En el caso extremo, con
+    # una sesión por clase, el split separa POR CLASE en vez de por sesión: se
+    # entrena con una sola clase y se testea contra otra, F1 = 0.
+    # Esto no lanzaba ningún error: guardaba el .joblib igual y el backend lo
+    # servía prediciendo siempre lo mismo con confianza 1.0.
+    sesiones_por_clase = {
+        clase: {g for g, etq in zip(groups, y_raw) if etq == clase}
+        for clase in conteo
+    }
+    clases_una_sesion = {c: s for c, s in sesiones_por_clase.items() if len(s) < 2}
+    if clases_una_sesion:
+        print("\n[ERROR] Estas señas están capturadas en una sola sesión:")
+        for clase, sesiones in sorted(clases_una_sesion.items()):
+            print(f"    - '{clase}': solo {sorted(sesiones)}")
+        print(
+            "\nCon un split agrupado por sujeto+sesión, cada una de esas señas cae\n"
+            "entera de un solo lado (todo en train o todo en test), así que las\n"
+            "métricas no significan nada. Capturá cada seña en AL MENOS 2 sesiones\n"
+            "distintas (idealmente también con más de un sujeto) y volvé a correr.\n"
+            "\nNo se entrenó ningún modelo."
+        )
+        sys.exit(1)
 
     # Split agrupado por sesión (no por muestra individual) para evitar fuga de datos.
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
     train_idx, test_idx = next(splitter.split(X, y, groups))
     X_train, X_test = X[train_idx], X[test_idx]
     y_train, y_test = y[train_idx], y[test_idx]
+
+    # Red de seguridad: incluso con ≥2 sesiones por clase, un split desafortunado
+    # puede dejar una clase entera fuera de train. Mejor frenar que guardar un
+    # modelo que no puede predecir esa clase.
+    clases_en_train = set(y_train)
+    if len(clases_en_train) < len(clases):
+        faltantes = [clases[i] for i in range(len(clases)) if i not in clases_en_train]
+        print(f"\n[ERROR] El split dejó estas clases fuera del entrenamiento: {faltantes}")
+        print("El modelo nunca podría predecirlas. Revisá el balance de sesiones "
+              "por clase. No se entrenó ningún modelo.")
+        sys.exit(1)
 
     print(f"\nTrain: {len(X_train)} muestras | Test: {len(X_test)} muestras "
           f"(split agrupado por sujeto+sesión)")

@@ -49,6 +49,10 @@ en el análisis del prototipo de escritorio):
    la versión y re-entrenar. El backend valida esto al cargar el modelo (ver
    backend/app/modelo_lse.py) para no servir predicciones con features
    desalineadas.
+
+5. ORIENTACIÓN CANÓNICA DE LA IMAGEN: espejada (ver ESPEJADO_CANONICO abajo).
+   Este es un contrato que NO se puede validar automáticamente y que hay que
+   respetar en los dos extremos del pipeline. Ver la nota completa ahí.
 """
 
 from __future__ import annotations
@@ -76,6 +80,38 @@ FEATURES_PER_HAND = (
 
 NUM_HANDS = 2  # slots fijos: [izquierda, derecha]
 FEATURE_VECTOR_LENGTH = FEATURES_PER_HAND * NUM_HANDS  # 138
+
+# ---------------------------------------------------------------------------
+# Contrato de orientación de la imagen — LEER ANTES DE TOCAR LA CAPTURA
+# ---------------------------------------------------------------------------
+# El vector de features usa slots FIJOS por handedness: los primeros 69 valores
+# son siempre la mano izquierda y los últimos 69 la derecha. MediaPipe decide
+# cuál es cuál a partir de la imagen que recibe — así que si la captura del
+# dataset y la inferencia en producción le pasan imágenes con orientación
+# OPUESTA, la misma seña cae en el slot contrario al que se entrenó. El vector
+# queda espejado respecto a lo aprendido y el modelo predice cualquier cosa.
+#
+# No hay forma de detectar esto automáticamente: los vectores tienen la
+# longitud correcta, la FEATURE_VERSION coincide, y no se lanza ningún error.
+# Solo baja la accuracy sin explicación. Por eso se fija acá, en el módulo
+# compartido, una única convención para todo el proyecto:
+#
+#   >>> La imagen se procesa SIEMPRE ESPEJADA horizontalmente. <<<
+#
+# Se eligió "espejada" y no "cruda" por dos motivos:
+#   1. Es lo que ya venía haciendo ml/capture_dataset.py (cv2.flip(frame, 1)),
+#      así que los datasets capturados hasta hoy siguen siendo válidos.
+#   2. Es la orientación natural para el usuario: se ve como en un espejo, que
+#      es lo que espera de una webcam, y el modelo ve exactamente lo mismo que
+#      ve la persona.
+#
+# Quién tiene que cumplirlo:
+#   - ml/capture_dataset.py  -> cv2.flip(frame, 1) antes de detector.process()
+#   - frontend/index.html    -> ctx.scale(-1, 1) al dibujar el frame a enviar
+#                               (¡el `transform: scaleX(-1)` del CSS NO alcanza:
+#                                es solo presentación, drawImage lee el frame
+#                                original sin espejar!)
+ESPEJADO_CANONICO = True
 
 # Cadenas de landmarks para calcular el ángulo de flexión de cada dedo
 # (base de la mano -> nudillo -> punta), igual criterio que el prototipo original.
@@ -188,6 +224,35 @@ def build_feature_vector(hand_landmarker_result) -> FeatureExtractionResult:
         right_present=right_present,
         raw_result=hand_landmarker_result,
     )
+
+
+def landmarks_para_overlay(hand_landmarker_result, decimales: int = 4) -> list[dict]:
+    """Serializa los landmarks a una estructura liviana para dibujar en el cliente.
+
+    Devuelve una lista con una entrada por mano detectada:
+        [{"mano": "Left", "puntos": [[x, y], ...21 pares...]}, ...]
+
+    Coordenadas normalizadas [0, 1] respecto del frame que se procesó, así el
+    frontend las escala al tamaño que tenga el canvas sin saber nada del backend.
+    Se omite `z` (no aporta al overlay 2D) y se redondea, para que el JSON que
+    viaja por el WebSocket ~8 veces por segundo se mantenga chico: con dos manos
+    son 84 números, menos de 1 KB por frame.
+
+    IMPORTANTE: estas coordenadas están en el sistema del frame YA ESPEJADO (ver
+    ESPEJADO_CANONICO). Como el cliente muestra el video espejado, se pueden
+    dibujar directamente, sin volver a invertir la x.
+    """
+    manos = []
+    lista_landmarks = getattr(hand_landmarker_result, "hand_landmarks", None) or []
+    lista_handedness = getattr(hand_landmarker_result, "handedness", None) or []
+
+    for landmarks, handedness in zip(lista_landmarks, lista_handedness):
+        manos.append({
+            "mano": handedness[0].category_name if handedness else "Unknown",
+            "puntos": [[round(float(lm.x), decimales), round(float(lm.y), decimales)]
+                       for lm in landmarks],
+        })
+    return manos
 
 
 class HandDetector:

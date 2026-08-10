@@ -1,0 +1,31 @@
+# Entornos virtuales locales (la imagen instala sus propias dependencias)
+.venv*/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Nada de esto hace falta en producción
+ml/
+tests/
+data/
+docs/
+.git/
+.github/
+.claude/
+requirements-dev.txt
+README.md
+
+# El modelo de MediaPipe se descarga durante el build (ver Dockerfile),
+# no se copia desde la máquina de desarrollo.
+common/models/*.task
+
+# Reportes de entrenamiento
+ml/reports/
+
+.DS_Store
+Thumbs.db
+*.log

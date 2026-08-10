@@ -15,6 +15,7 @@ la nota sobre por qué se usa la API MediaPipe Tasks en vez de la legacy
 from __future__ import annotations
 
 import sys
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -36,10 +37,17 @@ class Preprocesador:
         self.detector = new_hands_detector(max_num_hands=max_num_hands)
         self.tam_entrada = FEATURE_VECTOR_LENGTH
         self.version_features = FEATURE_VERSION
+        # Una única instancia de HandLandmarker se comparte entre todas las
+        # conexiones WebSocket, y el backend ahora procesa los frames en un
+        # threadpool (ver websocket_handler.py). MediaPipe NO es thread-safe:
+        # dos hilos llamando a detect() sobre el mismo landmarker pueden
+        # corromper su estado interno. El lock serializa el acceso.
+        self._lock = threading.Lock()
 
     def obtener_landmarks(self, frame_bgr: np.ndarray):
         """Corre MediaPipe sobre el frame y devuelve el HandLandmarkerResult crudo."""
-        return self.detector.process(frame_bgr)
+        with self._lock:
+            return self.detector.process(frame_bgr)
 
     def extraer_mano(self, frame_bgr: np.ndarray) -> FeatureExtractionResult:
         """Pipeline completo: detecta manos y devuelve el vector de features listo
