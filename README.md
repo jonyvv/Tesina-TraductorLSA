@@ -72,12 +72,39 @@ python ml/capture_dataset.py --sujeto leandro --sesion 1 --luz "natural"
 
 # Entrenar (Random Forest + MLP, comparados) sobre las muestras estáticas
 python ml/train.py
-
-# Entrenar LSA64 desde carpeta, ZIP o URL directa
-python ml/train_lsa64.py --dataset-dir "C:\\ruta\\a\\LSA64"
-python ml/train_lsa64.py --dataset-archive "C:\\ruta\\a\\LSA64.zip"
-python ml/train_lsa64.py --download-url "https://tu-url-directa/LSA64.zip"
 ```
+
+#### LSA64: pipeline en dos etapas
+
+Extraer los landmarks con MediaPipe es la parte cara (~130.000 inferencias sobre
+frames de 1080p para los 3200 videos); entrenar la BiLSTM sobre esos landmarks
+son segundos. Por eso las dos etapas están separadas: la extracción se paga una
+sola vez y queda cacheada en un `.npz`.
+
+```bash
+# Etapa 1 — una sola vez (~15 min con 7 procesos en un Ryzen 7)
+python ml/extract_features.py --dataset-dir ".lsa64_cache/extracted/all"
+
+# Etapa 2 — todas las veces que quieras, en segundos
+python ml/train_lsa64.py --epochs 60 --hidden-size 256
+python ml/train_lsa64.py --lr 5e-4 --batch-size 32
+```
+
+Opciones útiles:
+
+- `--workers N` — procesos en paralelo para la extracción (por defecto, la mitad de los hilos).
+- `--refresh-cache` — fuerza volver a extraer (necesario si cambiás `--frame-step` o `--max-frames`; el cache se invalida solo, igual).
+- `--labels-map labels.json` — nombres legibles de las señas (`{"001": "Opaco", ...}`). Por defecto usa `clase_01`..`clase_64`.
+- `--limit N` en `extract_features.py` — prueba rápida sobre N videos.
+
+También podés seguir pasando `--dataset-archive` o `--download-url`: si no hay
+cache, `train_lsa64.py` extrae y lo genera solo.
+
+**Split por sujeto.** `train_val_test_split` agrupa por persona (7 sujetos a
+train, 1 a val, 2 a test), y el entrenamiento verifica explícitamente que
+ningún sujeto aparezca en más de un split. Si detecta fuga, lo avisa por
+consola y lo deja registrado en el `.json` de resultados: una accuracy medida
+sobre personas ya vistas en entrenamiento no sirve como resultado de la tesina.
 
 Esto deja `backend/models/modelo_lse.joblib` listo para que lo cargue el backend.
 
@@ -131,6 +158,9 @@ backend, y la clase `TraductorService` con suavizado):
 - [x] Entrenamiento comparado Random Forest vs. MLP para señas estáticas (abecedario), con split agrupado por sesión (`GroupShuffleSplit`/`GroupKFold`) para evitar fuga de datos.
 - [x] Frontend funcional (cámara + overlay + texto traducido).
 - [x] Modelo dinámico (LSTM) servido en backend con ventana temporal y carga automática del `.pt`.
+- [x] Pipeline LSA64 separado en extracción cacheada + entrenamiento, con extracción paralela.
+- [x] Etiquetado correcto de LSA64 (`CCC_SSS_RRR`) y split agrupado por sujeto, con chequeo de fuga.
+- [ ] Correr el entrenamiento completo y registrar resultados (test accuracy por clase).
 - [ ] Dataset propio real (este scaffold no incluye datos, hay que capturarlos).
 - [ ] Deploy en Render/Railway/GCP con Docker.
 - [ ] Validación de usabilidad con usuarios reales de LSA.
