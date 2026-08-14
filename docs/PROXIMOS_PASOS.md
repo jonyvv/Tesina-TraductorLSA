@@ -1,41 +1,73 @@
 # Próximos pasos y ajustes al anteproyecto
 
-_Actualizado: 8 de agosto de 2026 — después de la primera corrida válida de entrenamiento sobre LSA64._
+_Actualizado: 10 de agosto de 2026 — después de la validación leave-one-subject-out._
 
 ---
 
 ## 1. Dónde quedamos hoy
 
-Primera corrida metodológicamente válida sobre LSA64:
+### Resultado principal
 
-| Métrica | Valor |
-|---|---|
-| Test accuracy | **86,05 %** (595 muestras, 64 clases) |
-| Val accuracy | 81,75 % (mejor epoch 24 de 32, cortó por early stopping) |
-| Split | 7 sujetos train / 1 val / 2 test — **sin fuga entre splits** |
-| Clases con accuracy ≥ 80 % | 48 de 64 |
-| Secuencias útiles | 2908 de 3200 (**292 descartadas, 9,1 %**) |
-| Extracción de landmarks | 39 min, cacheada en `.lsa64_cache/features_lsa64.npz` |
+**Accuracy signer-independent sobre LSA64: 79,8 % ± 8,9 %**
+(leave-one-subject-out, 10 folds, 64 clases, 2862 secuencias)
 
-Artefactos generados: `backend/models/modelo_lsa64_lstm.pt` y `modelo_lsa64_lstm.json`.
+Reporte completo en `ml/reports/loso_lsa64.json`, incluidas las predicciones de los
+10 folds agrupadas. Está dentro del rango publicado para LSA64 en régimen
+signer-independent (74,2 % a ~91,7 % de media según el método); los valores de 99 % que
+suelen citarse corresponden a protocolos *signer-dependent* o con fusión de
+características. Ver §3.1.
 
-**Contexto importante:** ese 86 % es *signer-independent* (el modelo nunca vio a las dos
-personas del test). La literatura sobre LSA64 en ese mismo régimen reporta desde 74,2 %
-hasta ~91,7 % de media según el método; los valores de 99 % que se citan suelen ser
-*signer-dependent* o con fusión de características. O sea: el punto de partida es
-razonable y comparable. Ver §3.1.
+| Sujeto de test | Accuracy | | Sujeto de test | Accuracy |
+|---|---|---|---|---|
+| sujeto_07 | 89,5 % | | sujeto_10 | 81,9 % |
+| sujeto_05 | 87,1 % | | sujeto_06 | 80,7 % |
+| sujeto_01 | 86,4 % | | sujeto_02 | 75,5 % |
+| sujeto_09 | 85,5 % | | sujeto_08 | 66,3 % |
+| sujeto_04 | 82,2 % | | sujeto_03 | 63,1 % |
 
-### Bugs corregidos en esta sesión
+**El desvío es el hallazgo, no un defecto de la medición.** Hay 26 puntos entre la
+persona más fácil y la más difícil, y ningún outlier estadístico (regla 1,5·IQR): el
+spread es real. Esto invalida retroactivamente cualquier número sacado de un solo split
+— tres corridas previas con 2 sujetos de test dieron 86,05 %, 78,55 % y 81,25 % sobre
+datos prácticamente idénticos.
+
+### Por qué varía tanto: frames perdidos
+
+MediaPipe no detecta manos en entre el 20 % y el 42 % de los frames, según la persona.
+La correlación entre tasa de retención de frames y accuracy por sujeto es **0,62** (con
+n=10 es sugestivo, no concluyente): los dos sujetos peores son también los dos con peor
+retención.
+
+El problema no es solo perder información, es *cómo* se perdía: al extraer con
+`keep_empty_frames=False` los frames sin mano se eliminaban de la secuencia, cerrando los
+huecos. La LSTM recibía el gesto comprimido de forma irregular. Ejemplos medidos:
+`001_001_001.mp4` pasaba de 44 frames a 18, `040_002_001.mp4` de 61 a 16.
+
+Desde el 10/8 la extracción guarda **siempre la secuencia completa** y el descarte se
+aplica en memoria al entrenar (`--keep-empty-frames`), igual que `min_seq_len`. Así una
+sola extracción sirve para ambos experimentos. Verificado: filtrar el caché completo
+reproduce el caché anterior byte por byte.
+
+### Bugs corregidos
 
 1. **Etiquetado roto.** `infer_label_from_path` descartaba el primer campo de
-   `CCC_SSS_RRR.mp4` — es decir, la seña — y armaba la etiqueta con sujeto+repetición.
+   `CCC_SSS_RRR.mp4` — la seña — y armaba la etiqueta con sujeto+repetición.
    Producía 50 clases falsas en vez de 64. Cualquier resultado anterior no medía nada.
 2. **Fuga de datos.** El sujeto salía `None`, así que el split agrupaba por archivo:
    la misma persona en train y en test.
-3. **Sin caché de features.** Cada corrida repetía los 39 min de MediaPipe. Ahora la
-   extracción está separada del entrenamiento (`ml/extract_features.py`).
+3. **Orientación de la imagen.** El pipeline de LSA64 no cumplía el contrato
+   `ESPEJADO_CANONICO` de `common/features.py`: extraía los videos sin espejar mientras
+   captura e inferencia trabajan espejadas. Como 42 de las 64 señas son de una sola mano,
+   el modelo entrenado así predecía cualquier cosa al servirlo desde el frontend, sin
+   lanzar ningún error. Ahora la orientación es parte de los metadatos del caché y lo
+   invalida automáticamente si no coincide.
+4. **Entrenamiento no reproducible.** `seed` solo determinaba el split; los pesos, el
+   dropout y el shuffle quedaban libres. Dos corridas sobre los mismos datos diferían
+   varios puntos. Ahora está todo seedeado.
+5. **Sin caché de features.** Cada corrida repetía ~45 min de MediaPipe. La extracción
+   está separada del entrenamiento (`ml/extract_features.py`).
 
-15 tests cubren estos casos (`ml/tests/`).
+26 tests cubren estos casos (`ml/tests/`).
 
 ---
 

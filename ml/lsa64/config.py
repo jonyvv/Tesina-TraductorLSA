@@ -10,6 +10,10 @@ DEFAULT_FRAME_STEP = 2
 DEFAULT_MIN_SEQUENCE_LEN = 8
 DATASET_VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 MODELS_DIR = Path(__file__).resolve().parents[2] / "backend" / "models"
+# Reportes de experimentos (LOSO, matrices de confusion). Van aparte de
+# MODELS_DIR: backend/models/ es lo que carga el backend en produccion, no el
+# lugar para artefactos de investigacion.
+REPORTS_DIR = Path(__file__).resolve().parents[2] / "ml" / "reports"
 
 # El cache de features vive en .lsa64_cache/ (ya ignorado por git): son ~100 MB
 # de landmarks derivados del dataset, no tiene sentido versionarlos.
