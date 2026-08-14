@@ -22,6 +22,7 @@ from sklearn.preprocessing import LabelEncoder
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from backend.app.modelo_lse import ModeloLSE  # noqa: E402
+from backend.app.modelos.sklearn_adapter import SklearnJoblibAdapter  # noqa: E402
 from common.features import FEATURE_VECTOR_LENGTH, FEATURE_VERSION  # noqa: E402
 
 CLASES = ["a", "b", "c"]
@@ -98,6 +99,21 @@ class TestCargar:
         with pytest.raises(FileNotFoundError):
             modelo.cargar()
 
+    def test_desactiva_el_paralelismo_del_random_forest(self, tmp_path):
+        """REGRESIÓN de rendimiento: el modelo se guarda con `n_jobs=-1`, pero
+        en producción se predice de a UNA muestra por frame y ahí el overhead de
+        repartir los árboles entre hilos supera al cómputo. Medido sobre el
+        Random Forest de 200 árboles del proyecto: 55 ms contra 19,6 ms con
+        `n_jobs=1` — más que todo el pipeline de MediaPipe junto."""
+        X, y_raw = _datos()
+        le = LabelEncoder().fit(CLASES)
+        rf = RandomForestClassifier(n_estimators=10, n_jobs=-1,
+                                    random_state=0).fit(X, le.transform(y_raw))
+
+        modelo = ModeloLSE(ruta_modelo=str(_guardar(tmp_path, rf, le)))
+        modelo.cargar()
+        assert modelo.model.n_jobs == 1
+
     def test_rechaza_mlp_de_una_sola_clase(self, tmp_path):
         """REGRESIÓN: MLPClassifier entrenado con una sola clase devuelve un
         `predict_proba` de 2 columnas pero un `classes_` de 1 elemento. Traducir
@@ -145,12 +161,16 @@ class TestCargar:
 
 
 class TestPredecir:
+    """Se construye el adaptador a mano (`desde_objetos`) en vez de pasar por
+    `cargar()`: varios de estos casos son modelos deliberadamente rotos que la
+    validación de `cargar()` rechazaría antes de poder probar el mapeo."""
+
     def _modelo_entrenado(self):
         X, y_raw = _datos()
         le = LabelEncoder().fit(CLASES)
         rf = RandomForestClassifier(n_estimators=25, random_state=0).fit(X, le.transform(y_raw))
         modelo = ModeloLSE(ruta_modelo="(en memoria)", umbral_confianza=0.5)
-        modelo.model, modelo.label_encoder, modelo.clases = rf, le, CLASES
+        modelo.adaptador = SklearnJoblibAdapter.desde_objetos(rf, le)
         return modelo
 
     def test_predice_la_clase_correcta(self):
@@ -174,7 +194,7 @@ class TestPredecir:
         rf = RandomForestClassifier(n_estimators=10, random_state=0).fit(X, le.transform(y_raw))
 
         modelo = ModeloLSE(ruta_modelo="(en memoria)")
-        modelo.model, modelo.label_encoder, modelo.clases = rf, le, CLASES
+        modelo.adaptador = SklearnJoblibAdapter.desde_objetos(rf, le)
 
         assert list(rf.classes_) == [1], "el fixture debe reproducir el caso del bug"
         pred = modelo.predecir(np.zeros(FEATURE_VECTOR_LENGTH, dtype=np.float32))

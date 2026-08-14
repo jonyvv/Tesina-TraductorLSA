@@ -22,13 +22,18 @@ lsa-traductor/
 │   │   ├── prediccion.py
 │   │   ├── traductor_service.py
 │   │   └── websocket_handler.py
-│   ├── models/               # acá se guarda el .joblib entrenado
+│   ├── models/               # pesos entrenados (.joblib / .pt) — NO se versionan
 │   └── requirements.txt
 ├── ml/                       # Captura de dataset + entrenamiento
 │   ├── capture_dataset.py
 │   ├── train.py                    # Random Forest vs. MLP (señas estáticas)
 │   ├── train_dynamic_lstm.py       # LSTM (señas dinámicas, fase 2)
-│   ├── reports/                    # matrices de confusión generadas
+│   ├── extract_features.py         # LSA64 etapa 1: landmarks -> cache .npz
+│   ├── train_lsa64.py              # LSA64 etapa 2: BiLSTM sobre el cache
+│   ├── evaluate_loso.py            # validación leave-one-subject-out
+│   ├── lsa64/                      # implementación de LSA64 (cache, folds, fit)
+│   ├── tests/                      # tests de splits, cache y entrenamiento
+│   ├── reports/                    # matrices de confusión y reportes .json
 │   └── requirements.txt
 ├── frontend/                 # cliente: cámara + WebSocket + UI
 │   ├── index.html              # estructura (semántica y accesible)
@@ -83,7 +88,84 @@ python ml/capture_dataset.py --sujeto leandro --sesion 1 --luz "natural"
 python ml/train.py
 ```
 
+#### LSA64: pipeline en dos etapas
+
+Extraer los landmarks con MediaPipe es la parte cara (~130.000 inferencias sobre
+frames de 1080p para los 3200 videos); entrenar la BiLSTM sobre esos landmarks
+son segundos. Por eso las dos etapas están separadas: la extracción se paga una
+sola vez y queda cacheada en un `.npz`.
+
+```bash
+# Etapa 1 — una sola vez (~46 min con 8 procesos en un Ryzen 7 5700)
+python ml/extract_features.py --dataset-dir ".lsa64_cache/extracted/all"
+
+# Etapa 2 — todas las veces que quieras, en segundos
+python ml/train_lsa64.py --epochs 60 --hidden-size 256
+python ml/train_lsa64.py --lr 5e-4 --batch-size 32
+```
+
+Opciones útiles:
+
+- `--workers N` — procesos en paralelo para la extracción (por defecto, la mitad de los hilos).
+- `--refresh-cache` — fuerza volver a extraer (necesario si cambiás `--frame-step` o `--max-frames`; el cache se invalida solo, igual).
+- `--labels-map labels.json` — nombres legibles de las señas (`{"001": "Opaco", ...}`). Por defecto usa `clase_01`..`clase_64`.
+- `--limit N` en `extract_features.py` — prueba rápida sobre N videos.
+
+También podés seguir pasando `--dataset-archive` o `--download-url`: si no hay
+cache, `train_lsa64.py` extrae y lo genera solo.
+
+**Split por sujeto.** `train_val_test_split` agrupa por persona (7 sujetos a
+train, 1 a val, 2 a test), y el entrenamiento verifica explícitamente que
+ningún sujeto aparezca en más de un split. Si detecta fuga, lo avisa por
+consola y lo deja registrado en el `.json` de resultados: una accuracy medida
+sobre personas ya vistas en entrenamiento no sirve como resultado de la tesina.
+
+#### Validación leave-one-subject-out
+
+Un solo split con 2 sujetos de test da un número inestable: tres corridas sobre
+datos prácticamente idénticos dieron 86,05 %, 78,55 % y 81,25 %. Ese spread no es
+ruido de medición, es la varianza real de estimar con dos personas. Por eso el
+resultado que se reporta sale de LOSO:
+
+```bash
+# Entrena 10 modelos (uno por sujeto dejado afuera) y reporta media ± desvío.
+# Reusa el mismo cache y el mismo loop de entrenamiento que train_lsa64.py,
+# así los números son comparables. No re-extrae nada.
+python ml/evaluate_loso.py
+```
+
+Deja el reporte completo en `ml/reports/loso_lsa64.json`: accuracy por fold, por
+clase y por sujeto, más las predicciones de los 10 folds agrupadas — cada muestra
+del dataset queda predicha exactamente una vez por un modelo que nunca vio a esa
+persona, así que sirven para armar la matriz de confusión del dataset entero.
+
+**LOSO no guarda modelos**: es un protocolo de medición, no produce un `.pt` para
+servir. El modelo que se sirve sale de `ml/train_lsa64.py`.
+
+Última medición registrada (11/8/2026): **79,8 % ± 8,9 %** signer-independent.
+El análisis de ese número está en `docs/PROXIMOS_PASOS.md`.
+
 Esto deja `backend/models/modelo_lse.joblib` listo para que lo cargue el backend.
+
+Si vas a usar LSA64, el flujo recomendado es organizar los videos por clase o
+pasar un CSV de anotaciones con columnas `video,label,subject` y, de ser
+posible, `split`. Ese script genera un modelo secuencial `.pt` pensado para
+señas/palabras, no para el abecedario. Para letras sigue usando `ml/train.py`
+con tus propias capturas.
+
+La implementación de LSA64 quedó separada en `ml/lsa64/` para mantener el
+entrypoint chico y dejar cada responsabilidad en su módulo. Si usás
+`--dataset-archive` o `--download-url`, el script descarga/extráe y entrena en
+un solo paso.
+
+El backend ahora detecta automáticamente `backend/models/modelo_lsa64_lstm.pt`
+si existe; si no, sigue usando `modelo_lse.joblib`. Para servir el `.pt`
+necesitás instalar `torch` en el entorno del backend.
+
+**Los pesos entrenados no se versionan.** `.gitignore` excluye `backend/models/*.pt`
+y `.joblib`, y también el cache `.lsa64_cache/` (~33 MB). Quien clone el repo tiene
+el código pero no los pesos: hay que reentrenar (etapa 1 + etapa 2) o pasarse el
+`.pt` por fuera de git.
 
 ### 2. Backend
 
@@ -154,10 +236,13 @@ y datos sintéticos.
 - [x] Frontend con overlay del esqueleto de la mano, métricas en vivo, temas claro/oscuro, diseño responsive y reconexión automática del WebSocket.
 - [x] Accesibilidad: estructura semántica, `aria-live` en el texto traducido, barras con `role="progressbar"`, foco visible, `prefers-reduced-motion`, áreas táctiles de 24 px y contraste WCAG AA (mínimo medido 4.93:1 en ambos temas).
 - [x] Medición de latencia end-to-end en el cliente, separando cómputo del servidor de red + codificación.
-- [x] Suite de tests automáticos (`tests/`).
+- [x] Suite de tests automáticos (`tests/` para el backend, `ml/tests/` para el pipeline LSA64).
 - [x] `Dockerfile` para deploy en un solo servicio.
-- [ ] **Dataset propio real.** Es hoy el bloqueante principal: hace falta capturar cada seña en **al menos 2 sesiones distintas** (idealmente con más de un sujeto). Con una sola sesión por seña, el split agrupado deja clases enteras fuera del entrenamiento y las métricas no significan nada — `ml/train.py` ahora lo detecta y aborta con un mensaje explicando el problema.
-- [ ] Modelo dinámico (LSTM) servido en producción — hoy solo se entrena (`train_dynamic_lstm.py`), falta integrarlo a `ModeloLSE`/`TraductorService`.
+- [x] Pipeline LSA64 separado en extracción cacheada + entrenamiento, con extracción paralela.
+- [x] Etiquetado correcto de LSA64 (`CCC_SSS_RRR`) y split agrupado por sujeto, con chequeo de fuga.
+- [x] Entrenamiento completo sobre LSA64, validado con leave-one-subject-out (10 folds, accuracy por sujeto y por clase). Ver `docs/PROXIMOS_PASOS.md`.
+- [x] **Modelo dinámico (BiLSTM) servido en producción**: `ModeloLSE` delega en un adaptador según la extensión (`.joblib`/`.pt`) y `SesionTraduccion` acumula la ventana temporal por conexión.
+- [ ] **Dataset propio real.** Sigue pendiente para las señas estáticas: hace falta capturar cada seña en **al menos 2 sesiones distintas** (idealmente con más de un sujeto). Con una sola sesión por seña, el split agrupado deja clases enteras fuera del entrenamiento y las métricas no significan nada — `ml/train.py` ahora lo detecta y aborta con un mensaje explicando el problema.
 - [ ] Deploy efectivo en Render/Railway/GCP (la imagen está lista; falta publicarla y restringir CORS).
 - [ ] Validación de usabilidad con usuarios reales de LSA.
 

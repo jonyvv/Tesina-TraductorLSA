@@ -53,12 +53,36 @@ class PreprocesadorFalso:
 
 
 class ModeloFalso:
+    """Modelo estático: predice frame a frame (Random Forest / MLP)."""
+
+    requiere_secuencia = False
+    ventana_inferencia = 1
+
     def __init__(self, umbral=0.6):
         self.umbral_confianza = umbral
         self.etiqueta = "a"
         self.confianza = 0.9
 
     def predecir(self, _features):
+        return Prediccion(etiqueta=self.etiqueta, confianza=self.confianza,
+                          umbral=self.umbral_confianza)
+
+
+class ModeloSecuenciaFalso(ModeloFalso):
+    """Modelo dinámico: necesita una ventana de N frames (BiLSTM de LSA64)."""
+
+    requiere_secuencia = True
+
+    def __init__(self, umbral=0.6, ventana=4):
+        super().__init__(umbral)
+        self.ventana_inferencia = ventana
+        self.ventanas_recibidas: list[np.ndarray] = []
+
+    def predecir(self, _features):
+        raise AssertionError("un modelo de secuencias no se llama frame a frame")
+
+    def predecir_secuencia(self, secuencia):
+        self.ventanas_recibidas.append(secuencia)
         return Prediccion(etiqueta=self.etiqueta, confianza=self.confianza,
                           umbral=self.umbral_confianza)
 
@@ -204,6 +228,69 @@ class TestAislamientoEntreConexiones:
         _alimentar(servicio.nueva_sesion(), 10)
         assert not hasattr(servicio, "_buffer")
         assert not hasattr(servicio, "_historial")
+
+
+class TestModeloDinamico:
+    """La BiLSTM de LSA64 no predice frame a frame: necesita una ventana de
+    `ventana_inferencia` frames CON mano detectada."""
+
+    @pytest.fixture
+    def entorno_secuencia(self):
+        pre, mod = PreprocesadorFalso(), ModeloSecuenciaFalso(ventana=4)
+        servicio = TraductorService(preprocesador=pre, modelo=mod, tam_buffer_suavizado=10)
+        return servicio, pre, mod
+
+    def test_no_predice_hasta_llenar_la_ventana(self, entorno_secuencia):
+        servicio, _, mod = entorno_secuencia
+        sesion = servicio.nueva_sesion()
+
+        for _ in range(3):                      # ventana = 4
+            respuesta = sesion.traducir(FRAME_JPEG)
+
+        assert mod.ventanas_recibidas == []
+        assert respuesta["valida"] is False
+
+    def test_la_ventana_llega_con_la_forma_correcta(self, entorno_secuencia):
+        servicio, _, mod = entorno_secuencia
+        _alimentar(servicio.nueva_sesion(), 4)
+
+        assert len(mod.ventanas_recibidas) == 1
+        assert mod.ventanas_recibidas[0].shape == (4, FEATURE_VECTOR_LENGTH)
+
+    def test_el_overlay_no_espera_a_la_ventana(self, entorno_secuencia):
+        """Los landmarks tienen que viajar desde el primer frame, aunque todavía
+        no haya predicción posible: si no, el overlay tarda medio segundo en
+        aparecer y parece que la cámara no anda."""
+        servicio, _, _ = entorno_secuencia
+        respuesta = servicio.nueva_sesion().traducir(FRAME_JPEG)
+
+        assert respuesta["valida"] is False
+        assert len(respuesta["landmarks"]) == 1
+
+    def test_bajar_las_manos_corta_la_secuencia(self, entorno_secuencia):
+        """Sin esto, la ventana pegaría el final de una seña con el principio de
+        la siguiente y la BiLSTM clasificaría una secuencia que nunca ocurrió."""
+        servicio, pre, mod = entorno_secuencia
+        sesion = servicio.nueva_sesion()
+
+        _alimentar(sesion, 4)
+        assert len(mod.ventanas_recibidas) == 1
+
+        pre.hay_mano = False
+        sesion.traducir(FRAME_JPEG)             # corta la secuencia
+        pre.hay_mano = True
+        _alimentar(sesion, 3)                   # 3 < 4: todavía no alcanza
+
+        assert len(mod.ventanas_recibidas) == 1, "la ventana no se reinició"
+
+    def test_dos_sesiones_no_comparten_la_ventana(self, entorno_secuencia):
+        servicio, _, mod = entorno_secuencia
+        sesion_a, sesion_b = servicio.nueva_sesion(), servicio.nueva_sesion()
+
+        _alimentar(sesion_a, 3)
+        sesion_b.traducir(FRAME_JPEG)
+
+        assert mod.ventanas_recibidas == [], "B completó la ventana de A"
 
 
 if __name__ == "__main__":

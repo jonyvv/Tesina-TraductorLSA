@@ -7,3 +7,9 @@ numpy>=1.26.0
 scikit-learn>=1.4.0
 joblib>=1.3.0
 python-multipart>=0.0.9
+# Necesario para servir la BiLSTM de LSA64 (`backend/models/modelo_lsa64_lstm.pt`),
+# que es el modelo que el backend elige por defecto cuando el .pt está presente.
+# Para el contenedor conviene instalar la rueda CPU, que pesa ~200 MB en vez de
+# ~2,5 GB porque no arrastra CUDA:
+#     pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2.0

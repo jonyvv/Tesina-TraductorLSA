@@ -1,0 +1,6 @@
+# El repo se edita desde Windows, pero en git todo se guarda con LF.
+# Sin esto, cada JSON que regenera el entrenamiento aparece como archivo
+# entero modificado y el diff real queda tapado.
+*.json  text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf

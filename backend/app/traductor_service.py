@@ -15,13 +15,18 @@ llamada a `reiniciar_buffer()` de uno le borraba el suavizado al otro.
 
 `TraductorService` queda entonces sin estado mutable (solo preprocesador +
 modelo, ambos compartibles), y todo lo que es "conversación con un cliente"
-vive en `SesionTraduccion`.
+vive en `SesionTraduccion`. Eso incluye la ventana de frames de los modelos
+dinámicos (la BiLSTM de LSA64): igual que el buffer de suavizado, es estado de
+UNA conversación, y compartirla entre conexiones mezclaría las señas de dos
+personas dentro de la misma secuencia.
 """
 from __future__ import annotations
 
 import time
 from collections import deque
 from dataclasses import dataclass, field
+
+import numpy as np
 
 from .frame import Frame
 from .modelo_lse import ModeloLSE
@@ -61,28 +66,53 @@ class TraductorService:
         self.modelo = modelo
         self.tam_buffer_suavizado = tam_buffer_suavizado
 
-    def procesar(self, frame: Frame) -> ResultadoFrame:
+    def procesar(self, frame: Frame, secuencia: deque | None = None) -> ResultadoFrame:
         """Pipeline completo para UN frame: decodificar -> extraer mano ->
         predecir. No aplica suavizado (eso lo hace `SesionTraduccion.traducir`,
-        que es el punto de entrada real desde el WebSocketHandler)."""
+        que es el punto de entrada real desde el WebSocketHandler).
+
+        `secuencia` es la ventana de frames de la sesión que llama. La recibe
+        por parámetro en vez de guardarla: así el servicio sigue sin estado y
+        dos conexiones no se pisan la secuencia (mismo motivo que el buffer de
+        suavizado). Solo la usan los modelos dinámicos.
+        """
         arr = frame.a_array()
         resultado = self.preprocesador.extraer_mano(arr)
 
         landmarks = landmarks_para_overlay(resultado.raw_result)
         manos = int(resultado.left_present) + int(resultado.right_present)
 
-        if not resultado.any_hand_present():
+        def _resultado(prediccion: Prediccion) -> ResultadoFrame:
             return ResultadoFrame(
-                prediccion=Prediccion.vacia(umbral=self.modelo.umbral_confianza),
+                prediccion=prediccion,
                 landmarks=landmarks,
                 manos_detectadas=manos,
             )
 
-        return ResultadoFrame(
-            prediccion=self.modelo.predecir(resultado.vector),
-            landmarks=landmarks,
-            manos_detectadas=manos,
-        )
+        if not resultado.any_hand_present():
+            # Sin manos se corta la seña: la ventana acumulada dejó de ser una
+            # secuencia continua, así que arrancar de cero es lo correcto.
+            if secuencia is not None:
+                secuencia.clear()
+            return _resultado(Prediccion.vacia(umbral=self.modelo.umbral_confianza))
+
+        if self.modelo.requiere_secuencia:
+            if secuencia is None:
+                raise RuntimeError(
+                    "El modelo cargado necesita una ventana de frames. Usá "
+                    "`servicio.nueva_sesion().traducir(...)` en vez de llamar a "
+                    "`procesar()` suelto."
+                )
+            secuencia.append(resultado.vector)
+            # Hasta no llenar la ventana no hay con qué predecir. Se devuelve
+            # una predicción vacía, pero CON los landmarks: el overlay tiene que
+            # dibujarse desde el primer frame igual.
+            if len(secuencia) < secuencia.maxlen:
+                return _resultado(Prediccion.vacia(umbral=self.modelo.umbral_confianza))
+            ventana = np.asarray(list(secuencia), dtype=np.float32)
+            return _resultado(self.modelo.predecir_secuencia(ventana))
+
+        return _resultado(self.modelo.predecir(resultado.vector))
 
     def nueva_sesion(self) -> "SesionTraduccion":
         """Crea el estado de suavizado/historial para una conexión nueva."""
@@ -90,7 +120,7 @@ class TraductorService:
 
 
 class SesionTraduccion:
-    """Estado de UNA conexión WebSocket: buffer de suavizado + historial."""
+    """Estado de UNA conexión WebSocket: buffer de suavizado + ventana + historial."""
 
     def __init__(self, servicio: TraductorService, tam_buffer: int = 10):
         self.servicio = servicio
@@ -98,6 +128,9 @@ class SesionTraduccion:
         # entre frames consecutivos (mismo patrón que el prototipo de escritorio,
         # que sí acertó en esta parte de la UX).
         self._buffer: deque[tuple[str | None, float]] = deque(maxlen=tam_buffer)
+        # Ventana de features para los modelos dinámicos. Con un modelo estático
+        # `ventana_inferencia` es 1 y la ventana no se usa.
+        self._secuencia: deque = deque(maxlen=max(1, servicio.modelo.ventana_inferencia))
         self._historial: list[Prediccion] = []
 
     def traducir(self, datos: bytes) -> dict:
@@ -106,7 +139,7 @@ class SesionTraduccion:
         inicio = time.perf_counter()
 
         frame = Frame(datos=datos)
-        resultado_frame = self.servicio.procesar(frame)
+        resultado_frame = self.servicio.procesar(frame, secuencia=self._secuencia)
 
         etiqueta, confianza, estabilidad = self._suavizar(resultado_frame.prediccion)
 
@@ -177,3 +210,4 @@ class SesionTraduccion:
 
     def reiniciar_buffer(self) -> None:
         self._buffer.clear()
+        self._secuencia.clear()

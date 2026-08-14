@@ -228,12 +228,10 @@ práctica (ver el análisis del repo previo). Acá se separan desde el diseño:
 - **Estático** (abecedario): un vector de 138 valores por muestra → `ml/train.py` → RandomForest / MLP.
 - **Dinámico** (palabras con movimiento): una secuencia de vectores de 138 valores → `ml/train_dynamic_lstm.py` → LSTM bidireccional.
 
-El backend (`ModeloLSE`) hoy sirve el modelo estático. Servir también el
-modelo dinámico requiere agregar una segunda instancia de `ModeloLSE` (o una
-subclase) que mantenga una ventana deslizante de frames por sesión de
-WebSocket antes de predecir — el `TraductorService` ya tiene la estructura
-para extenderse así (el buffer de suavizado es conceptualmente parecido al
-buffer que necesitaría el modelo dinámico).
+El backend (`ModeloLSE`) sirve el modelo estático o el dinámico según el
+archivo que se cargue. Si existe `backend/models/modelo_lsa64_lstm.pt`, el
+servidor usa ese artefacto y `TraductorService` acumula una ventana deslizante
+de frames antes de predecir. Si no, sigue usando `modelo_lse.joblib`.
 
 ## 6. Alternativa de arquitectura a evaluar: landmarks en el cliente
 
@@ -301,8 +299,8 @@ modelo, migrar no implica tocar `TraductorService`, `WebSocketHandler` ni el
 frontend:
 
 1. Entrenar el nuevo modelo (`ml/train.py` ya entrena y compara MLP vs. RF; para CNN/LSTM ver `ml/train_dynamic_lstm.py` como punto de partida).
-2. Exportar a un formato que `ModeloLSE.cargar()` sepa leer. Para mantener todo en `.joblib` con scikit-learn (MLP) no hace falta cambiar nada. Para PyTorch/TensorFlow, se agrega una rama en `cargar()`/`predecir()` (o una subclase `ModeloLSEtorch`) que cargue `.pt`/`.h5`/`.onnx` en vez de `.joblib`.
-3. `backend/app/main.py` apunta `RUTA_MODELO` al nuevo archivo. Nada más cambia.
+2. Exportar el checkpoint `.pt` con los metadatos esperados por `backend/app/modelos/torch_adapter.py` (`label_classes`, `feature_version`, `feature_vector_length`, `hidden_size`, `min_seq_len`, `model_state_dict`).
+3. `backend/app/main.py` detecta automáticamente `backend/models/modelo_lsa64_lstm.pt` si existe; si no, cae al `.joblib`.
 
 ## 8. Deploy
 
@@ -310,7 +308,8 @@ Conforme a las limitaciones del anteproyecto (capa gratuita de Render/Railway/GC
 
 - **Backend**: contenedor Docker (`Dockerfile` en la raíz) con `backend/requirements.txt`, expone `/health`, `/model/info` y `/ws/translate`. `main.py` ya sirve el frontend estático desde la misma app (`StaticFiles`), así que un solo servicio cubre todo — importante para no gastar dos slots de la capa gratuita.
 - **Modelo de MediaPipe**: se descarga durante el *build*, no al arrancar. Si se bajara en el arranque, cada despliegue (y cada reinicio del contenedor, que en la capa gratuita ocurre seguido por inactividad) quedaría atado a que `storage.googleapis.com` esté accesible desde el entorno de producción.
-- **Modelo entrenado**: se versiona junto al backend (`backend/models/modelo_lse.joblib`), no se entrena en producción.
+- **Modelo entrenado**: se versiona junto al backend (`backend/models/modelo_lse.joblib` para las señas estáticas, `backend/models/modelo_lsa64_lstm.pt` para la BiLSTM de LSA64), no se entrena en producción. Cuál se sirve lo decide `main.py`: `LSA_MODEL_PATH` si está definida, si no el `.pt` cuando existe, si no el `.joblib`.
+- **Dependencia de PyTorch**: hace falta solo para servir el `.pt`, pero como ese es el modelo que se elige por defecto, está declarada en `backend/requirements.txt`. En el contenedor conviene instalar la rueda CPU (`--index-url https://download.pytorch.org/whl/cpu`): son ~200 MB en vez de ~2,5 GB, y la GPU no se usa para inferir de a una ventana por vez.
 - **Puerto**: Render y Railway lo inyectan por `$PORT`; el contenedor lo respeta y cae a 8000 en local.
 - **Usuario**: el contenedor corre como usuario sin privilegios, no como root.
 - **CORS**: restringir `allow_origins` al dominio real antes de la entrega final (hoy está en `"*"` para desarrollo).

@@ -12,6 +12,7 @@ Correr con:
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -32,7 +33,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lsa.main")
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-RUTA_MODELO = BASE_DIR / "backend" / "models" / "modelo_lse.joblib"
+MODELS_DIR = BASE_DIR / "backend" / "models"
+
+# Qué modelo se sirve, en orden de prioridad:
+#   1. lo que diga LSA_MODEL_PATH (permite probar un checkpoint sin tocar código)
+#   2. la BiLSTM de LSA64, si el .pt está presente (señas dinámicas, 64 clases)
+#   3. el .joblib de scikit-learn (señas estáticas del dataset propio)
+# El formato lo resuelve `modelos/factory.py` por la extensión del archivo.
+_MODELO_LSTM = MODELS_DIR / "modelo_lsa64_lstm.pt"
+RUTA_MODELO = Path(
+    os.getenv("LSA_MODEL_PATH")
+    or (_MODELO_LSTM if _MODELO_LSTM.exists() else MODELS_DIR / "modelo_lse.joblib")
+)
 UMBRAL_CONFIANZA = 0.6
 
 # --- Construcción de dependencias (equivalente al "carga modelo" del diagrama) ---
@@ -66,7 +78,8 @@ def inicializar() -> None:
     except (FileNotFoundError, RuntimeError) as exc:
         logger.warning(
             "%s\nEl backend arrancará igual, pero /ws/translate va a fallar "
-            "hasta que exista un modelo entrenado válido (ver ml/train.py).",
+            "hasta que exista un modelo entrenado válido "
+            "(ver ml/train.py o ml/train_lsa64.py).",
             exc,
         )
 
@@ -105,6 +118,7 @@ def health() -> dict:
         "status": "ok",
         "preprocesador_listo": preprocesador is not None,
         "modelo_cargado": modelo.model is not None,
+        "modelo": RUTA_MODELO.name,
         "clases": modelo.clases,
         "listo_para_traducir": ws_handler is not None and modelo.model is not None,
     }
@@ -116,6 +130,11 @@ def model_info() -> dict:
         "clases": modelo.clases,
         "umbral_confianza": modelo.umbral_confianza,
         "feature_version": modelo.feature_version_entrenamiento,
+        # Con un modelo de secuencias (la BiLSTM de LSA64) el backend no puede
+        # predecir hasta juntar `ventana_inferencia` frames CON mano detectada.
+        # El cliente lo necesita para no interpretar ese arranque como un error.
+        "requiere_secuencia": modelo.requiere_secuencia,
+        "ventana_inferencia": modelo.ventana_inferencia,
         # El frontend dibuja el esqueleto de la mano con estas conexiones. Se
         # sirven desde acá en vez de hardcodearlas en el JS para que haya una
         # sola definición del esqueleto en todo el proyecto (misma razón por la

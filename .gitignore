@@ -13,7 +13,6 @@ common/models/*.task
 
 # Modelos entrenados (se generan con ml/train.py / ml/train_dynamic_lstm.py)
 backend/models/*.joblib
-backend/models/*.pt
 backend/models/*.onnx
 
 # Dataset capturado (contiene datos de captura de personas — no versionar)
@@ -28,6 +27,12 @@ ml/reports/*.png
 # Sistema
 .DS_Store
 Thumbs.db
+
+.lsa64_cache/extracted
+
+# Documentos de la carrera (no son parte del código)
+/anteproyecto (1).docx
+/Arquitectura de traductor de señas RSA  (1).docx
 
 # Mantener estructura de carpetas vacías en git
 !**/.gitkeep
