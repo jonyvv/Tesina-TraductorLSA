@@ -22,13 +22,18 @@ lsa-traductor/
 │   │   ├── prediccion.py
 │   │   ├── traductor_service.py
 │   │   └── websocket_handler.py
-│   ├── models/               # acá se guarda el .joblib entrenado
+│   ├── models/               # pesos entrenados (.joblib / .pt) — NO se versionan
 │   └── requirements.txt
 ├── ml/                       # Captura de dataset + entrenamiento
 │   ├── capture_dataset.py
 │   ├── train.py                    # Random Forest vs. MLP (señas estáticas)
 │   ├── train_dynamic_lstm.py       # LSTM (señas dinámicas, fase 2)
-│   ├── reports/                    # matrices de confusión generadas
+│   ├── extract_features.py         # LSA64 etapa 1: landmarks -> cache .npz
+│   ├── train_lsa64.py              # LSA64 etapa 2: BiLSTM sobre el cache
+│   ├── evaluate_loso.py            # validación leave-one-subject-out
+│   ├── lsa64/                      # implementación de LSA64 (cache, folds, fit)
+│   ├── tests/                      # tests de splits, cache y entrenamiento
+│   ├── reports/                    # matrices de confusión y reportes .json
 │   └── requirements.txt
 ├── frontend/
 │   └── index.html            # cliente: cámara + WebSocket + UI
@@ -82,7 +87,7 @@ son segundos. Por eso las dos etapas están separadas: la extracción se paga un
 sola vez y queda cacheada en un `.npz`.
 
 ```bash
-# Etapa 1 — una sola vez (~15 min con 7 procesos en un Ryzen 7)
+# Etapa 1 — una sola vez (~46 min con 8 procesos en un Ryzen 7 5700)
 python ml/extract_features.py --dataset-dir ".lsa64_cache/extracted/all"
 
 # Etapa 2 — todas las veces que quieras, en segundos
@@ -106,6 +111,31 @@ ningún sujeto aparezca en más de un split. Si detecta fuga, lo avisa por
 consola y lo deja registrado en el `.json` de resultados: una accuracy medida
 sobre personas ya vistas en entrenamiento no sirve como resultado de la tesina.
 
+#### Validación leave-one-subject-out
+
+Un solo split con 2 sujetos de test da un número inestable: tres corridas sobre
+datos prácticamente idénticos dieron 86,05 %, 78,55 % y 81,25 %. Ese spread no es
+ruido de medición, es la varianza real de estimar con dos personas. Por eso el
+resultado que se reporta sale de LOSO:
+
+```bash
+# Entrena 10 modelos (uno por sujeto dejado afuera) y reporta media ± desvío.
+# Reusa el mismo cache y el mismo loop de entrenamiento que train_lsa64.py,
+# así los números son comparables. No re-extrae nada.
+python ml/evaluate_loso.py
+```
+
+Deja el reporte completo en `ml/reports/loso_lsa64.json`: accuracy por fold, por
+clase y por sujeto, más las predicciones de los 10 folds agrupadas — cada muestra
+del dataset queda predicha exactamente una vez por un modelo que nunca vio a esa
+persona, así que sirven para armar la matriz de confusión del dataset entero.
+
+**LOSO no guarda modelos**: es un protocolo de medición, no produce un `.pt` para
+servir. El modelo que se sirve sale de `ml/train_lsa64.py`.
+
+Última medición registrada (11/8/2026): **79,8 % ± 8,9 %** signer-independent.
+El análisis de ese número está en `docs/PROXIMOS_PASOS.md`.
+
 Esto deja `backend/models/modelo_lse.joblib` listo para que lo cargue el backend.
 
 Si vas a usar LSA64, el flujo recomendado es organizar los videos por clase o
@@ -122,6 +152,11 @@ un solo paso.
 El backend ahora detecta automáticamente `backend/models/modelo_lsa64_lstm.pt`
 si existe; si no, sigue usando `modelo_lse.joblib`. Para servir el `.pt`
 necesitás instalar `torch` en el entorno del backend.
+
+**Los pesos entrenados no se versionan.** `.gitignore` excluye `backend/models/*.pt`
+y `.joblib`, y también el cache `.lsa64_cache/` (~33 MB). Quien clone el repo tiene
+el código pero no los pesos: hay que reentrenar (etapa 1 + etapa 2) o pasarse el
+`.pt` por fuera de git.
 
 ### 2. Backend
 
@@ -160,7 +195,7 @@ backend, y la clase `TraductorService` con suavizado):
 - [x] Modelo dinámico (LSTM) servido en backend con ventana temporal y carga automática del `.pt`.
 - [x] Pipeline LSA64 separado en extracción cacheada + entrenamiento, con extracción paralela.
 - [x] Etiquetado correcto de LSA64 (`CCC_SSS_RRR`) y split agrupado por sujeto, con chequeo de fuga.
-- [ ] Correr el entrenamiento completo y registrar resultados (test accuracy por clase).
+- [x] Entrenamiento completo sobre LSA64 con resultados registrados, validado con leave-one-subject-out (10 folds, accuracy por sujeto y por clase). Ver `docs/PROXIMOS_PASOS.md`.
 - [ ] Dataset propio real (este scaffold no incluye datos, hay que capturarlos).
 - [ ] Deploy en Render/Railway/GCP con Docker.
 - [ ] Validación de usabilidad con usuarios reales de LSA.
