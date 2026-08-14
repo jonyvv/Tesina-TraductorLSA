@@ -14,10 +14,14 @@ from pathlib import Path
 
 import numpy as np
 
-from common.features import FEATURE_VECTOR_LENGTH
-from common.models.lsa64 import BiLSTMClassifier
-
-from .cache import FeatureCache, build_meta, load_cache_if_compatible, save_cache
+from .cache import (
+    FeatureCache,
+    build_meta,
+    load_cache_if_compatible,
+    puede_servir_frames_completos,
+    save_cache,
+)
+from .fitting import ajustar_modelo, evaluar as _evaluate, set_seed as _set_seed
 from .config import LSA64TrainingConfig, default_cache_path
 from .data import (
     ESPEJADO_CANONICO,
@@ -27,28 +31,6 @@ from .data import (
     load_label_map,
     train_val_test_split,
 )
-
-
-def _evaluate(model, loader, device, collect: bool = False):
-    import torch
-
-    model.eval()
-    correct, total = 0, 0
-    y_true: list[int] = []
-    y_pred: list[int] = []
-    with torch.no_grad():
-        for x, lengths, y_batch in loader:
-            x = x.to(device)
-            y_batch = y_batch.to(device)
-            out = model(x, lengths)
-            pred = out.argmax(dim=1)
-            correct += (pred == y_batch).sum().item()
-            total += y_batch.size(0)
-            if collect:
-                y_true.extend(y_batch.cpu().tolist())
-                y_pred.extend(pred.cpu().tolist())
-    accuracy = correct / max(total, 1)
-    return (accuracy, y_true, y_pred) if collect else accuracy
 
 
 def _resolve_cache_path(config: LSA64TrainingConfig) -> Path:
@@ -87,7 +69,7 @@ def _extract_and_cache(config: LSA64TrainingConfig, cache_path: Path) -> Feature
         frame_step=config.frame_step,
         max_frames=config.max_frames,
         min_seq_len=config.min_seq_len,
-        keep_empty_frames=config.keep_empty_frames,
+        keep_empty_frames=True,  # siempre completo; el filtro es del entrenamiento
         workers=workers,
     )
     if not sequences:
@@ -109,7 +91,7 @@ def _extract_and_cache(config: LSA64TrainingConfig, cache_path: Path) -> Feature
             feature_vector_length=config.feature_vector_length,
             frame_step=config.frame_step,
             max_frames=config.max_frames,
-            keep_empty_frames=config.keep_empty_frames,
+            keep_empty_frames=True,
             espejado=ESPEJADO_CANONICO,
             min_seq_len=config.min_seq_len,
             dataset_dir=str(config.dataset_dir),
@@ -118,6 +100,58 @@ def _extract_and_cache(config: LSA64TrainingConfig, cache_path: Path) -> Feature
     save_cache(cache_path, cache)
     print(f"[OK] Cache guardado en {cache_path}")
     return cache
+
+
+def _frames_con_mano(secuencia: np.ndarray) -> np.ndarray:
+    """Máscara de frames donde MediaPipe detecto al menos una mano.
+
+    Los flags de presencia estan en la posicion 0 (mano izquierda) y
+    FEATURES_PER_HAND (derecha) del vector, ver common/features.py.
+    """
+    from common.features import FEATURES_PER_HAND
+
+    return (secuencia[:, 0] > 0) | (secuencia[:, FEATURES_PER_HAND] > 0)
+
+
+def _apply_frame_filter(cache: FeatureCache, keep_empty_frames: bool) -> FeatureCache:
+    """Descarta los frames sin mano si el entrenamiento no los quiere.
+
+    Se aplica en memoria, no al extraer: la extraccion guarda la secuencia
+    completa y aca se decide. Eso permite comparar los dos modos sobre el mismo
+    cache en vez de re-extraer 46 minutos por cada experimento.
+
+    Ojo con lo que significa cada modo:
+      - keep_empty_frames=True  -> se conserva la grilla temporal. Un frame en
+        ceros dice "aca no habia mano", y los flags de presencia lo codifican.
+      - keep_empty_frames=False -> los huecos se cierran y la secuencia se
+        comprime de forma irregular: el gesto le llega acelerado a saltos a la
+        LSTM, y tanto mas cuanto peor detecte MediaPipe a esa persona.
+    """
+    if keep_empty_frames:
+        return cache
+
+    nuevas, descartados_total, frames_antes = [], 0, 0
+    for secuencia in cache.sequences:
+        mascara = _frames_con_mano(secuencia)
+        frames_antes += len(secuencia)
+        descartados_total += int((~mascara).sum())
+        nuevas.append(np.ascontiguousarray(secuencia[mascara]))
+
+    if not descartados_total:
+        return cache
+
+    print(
+        f"[i] {descartados_total} de {frames_antes} frames descartados por no tener mano "
+        f"({100 * descartados_total / max(frames_antes, 1):.1f}%)"
+    )
+    return FeatureCache(
+        sequences=nuevas,
+        labels=list(cache.labels),
+        subjects=list(cache.subjects),
+        paths=list(cache.paths),
+        splits=list(cache.splits),
+        meta={**cache.meta, "keep_empty_frames_aplicado": False},
+    )
 
 
 def _apply_min_seq_len(cache: FeatureCache, min_seq_len: int) -> FeatureCache:
@@ -143,15 +177,32 @@ def _apply_min_seq_len(cache: FeatureCache, min_seq_len: int) -> FeatureCache:
     )
 
 
+def _postprocesar(cache: FeatureCache, config: LSA64TrainingConfig) -> FeatureCache:
+    """Filtros que se aplican en memoria al cargar. El orden importa: primero
+    se descartan los frames sin mano, y recien despues se mide el largo minimo
+    de la secuencia resultante."""
+    cache = _apply_frame_filter(cache, config.keep_empty_frames)
+    return _apply_min_seq_len(cache, config.min_seq_len)
+
+
 def load_features(config: LSA64TrainingConfig) -> FeatureCache:
     cache_path = _resolve_cache_path(config)
     if config.refresh_cache:
-        return _apply_min_seq_len(_extract_and_cache(config, cache_path), config.min_seq_len)
+        return _postprocesar(_extract_and_cache(config, cache_path), config)
 
     cache, motivos = load_cache_if_compatible(cache_path, _expected_meta(config))
     if cache is not None:
         print(f"Cache de features: {cache_path}")
         print(f"  {cache.summary()}")
+        print(f"  frames: {'completos' if config.keep_empty_frames else 'solo con mano'}")
+
+        if config.keep_empty_frames and not puede_servir_frames_completos(cache.meta):
+            raise ValueError(
+                f"Pediste --keep-empty-frames pero {cache_path.name} se extrajo descartando "
+                f"los frames sin mano: esos frames ya no existen.\n"
+                f"Volve a extraer con: python ml/extract_features.py --dataset-dir <ruta>"
+            )
+
         cache_min = cache.meta.get("min_seq_len")
         if cache_min is not None and config.min_seq_len < cache_min:
             print(
@@ -159,10 +210,10 @@ def load_features(config: LSA64TrainingConfig) -> FeatureCache:
                 f"con {cache_min}: las secuencias mas cortas ya no estan. "
                 f"Usa --refresh-cache si las necesitas."
             )
-        return _apply_min_seq_len(cache, config.min_seq_len)
+        return _postprocesar(cache, config)
 
     print(f"No se usa el cache ({'; '.join(motivos)}).")
-    return _apply_min_seq_len(_extract_and_cache(config, cache_path), config.min_seq_len)
+    return _postprocesar(_extract_and_cache(config, cache_path), config)
 
 
 def _check_subject_leakage(
@@ -191,12 +242,11 @@ def _check_subject_leakage(
 def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
     import torch
     from sklearn.preprocessing import LabelEncoder
-    from torch.nn.utils.rnn import pad_sequence
-    from torch.utils.data import DataLoader, Dataset
 
     if config.frame_step < 1 or config.min_seq_len < 1:
         raise ValueError("frame_step y min_seq_len deben ser >= 1")
 
+    _set_seed(config.seed)
     cache = load_features(config)
     sequence_list = cache.sequences
     metadata = [
@@ -223,89 +273,28 @@ def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
     else:
         print("[OK] Ningun sujeto aparece en mas de un split.")
 
-    class SequenceDataset(Dataset):
-        def __init__(self, indices: list[int]):
-            self.indices = indices
-
-        def __len__(self):
-            return len(self.indices)
-
-        def __getitem__(self, index):
-            seq_idx = self.indices[index]
-            return torch.from_numpy(sequence_list[seq_idx]), int(label_list[seq_idx])
-
-    def collate(batch):
-        sequences_batch, labels_batch = zip(*batch)
-        lengths = torch.tensor([len(sequence) for sequence in sequences_batch], dtype=torch.long)
-        padded = pad_sequence(sequences_batch, batch_first=True)
-        return padded, lengths, torch.tensor(labels_batch, dtype=torch.long)
-
-    train_loader = DataLoader(
-        SequenceDataset(train_idx), batch_size=config.batch_size, shuffle=True, collate_fn=collate
-    )
-    val_loader = (
-        DataLoader(SequenceDataset(val_idx), batch_size=config.batch_size, shuffle=False, collate_fn=collate)
-        if val_idx else None
-    )
-    test_loader = DataLoader(
-        SequenceDataset(test_idx), batch_size=config.batch_size, shuffle=False, collate_fn=collate
-    )
-
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Device : {device}")
-    model = BiLSTMClassifier(FEATURE_VECTOR_LENGTH, config.hidden_size, len(label_encoder.classes_)).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    criterion = torch.nn.CrossEntropyLoss()
-
-    best_state = None
-    best_val_acc = -1.0
-    best_epoch = 0
-    epochs_sin_mejora = 0
-    use_validation = val_loader is not None
-    history: list[dict] = []
-
+    print(f"Device : {device} | seed: {config.seed} (corrida reproducible)")
     print()
-    for epoch in range(config.epochs):
-        model.train()
-        total_loss = 0.0
-        for x, lengths, y_batch in train_loader:
-            x = x.to(device)
-            y_batch = y_batch.to(device)
-            optimizer.zero_grad()
-            out = model(x, lengths)
-            loss = criterion(out, y_batch)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
 
-        epoch_loss = total_loss / max(len(train_loader), 1)
-        if use_validation:
-            val_acc = _evaluate(model, val_loader, device)
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                best_epoch = epoch + 1
-                epochs_sin_mejora = 0
-                best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-            else:
-                epochs_sin_mejora += 1
-            metric_text = f" - val acc: {val_acc:.4f}"
-        else:
-            val_acc = None
-            metric_text = ""
+    resultado = ajustar_modelo(
+        sequence_list,
+        label_list,
+        n_clases=len(label_encoder.classes_),
+        train_idx=train_idx,
+        val_idx=val_idx,
+        test_idx=test_idx,
+        config=config,
+        verbose=True,
+    )
+    model = resultado.model
+    test_acc = resultado.test_accuracy
+    y_true, y_pred = resultado.y_true, resultado.y_pred
+    best_val_acc = resultado.best_val_accuracy
+    best_epoch = resultado.best_epoch
+    history = resultado.history
+    use_validation = best_val_acc is not None
 
-        history.append({"epoch": epoch + 1, "loss": epoch_loss, "val_accuracy": val_acc})
-        print(f"Epoch {epoch + 1}/{config.epochs} - loss: {epoch_loss:.4f}{metric_text}")
-
-        # Early stopping: con 64 clases y ~2200 secuencias, seguir despues de
-        # que la validacion deja de mejorar solo agrega overfitting.
-        if use_validation and config.patience > 0 and epochs_sin_mejora >= config.patience:
-            print(f"Early stopping en epoch {epoch + 1} (mejor: epoch {best_epoch}, val acc {best_val_acc:.4f})")
-            break
-
-    if best_state is not None:
-        model.load_state_dict(best_state)
-
-    test_acc, y_true, y_pred = _evaluate(model, test_loader, device, collect=True)
     print()
     print(f"[RESULTADO] test accuracy: {test_acc:.4f}")
 

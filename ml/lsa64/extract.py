@@ -20,12 +20,18 @@ Notas de implementacion
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
 from .data import VideoSample, sequence_from_video
+
+# Si en este tiempo ningun worker devuelve un resultado, algo se rompio: un
+# video de ~2 s tarda ~2,5 s en procesarse, asi que 5 min es varias ordenes de
+# magnitud mas de lo normal.
+WORKER_TIMEOUT_S = 300
 
 _detector = None
 _options: dict = {}
@@ -64,23 +70,33 @@ def _extract_one(job: tuple[int, str]) -> ExtractionResult:
         raise RuntimeError("El worker no fue inicializado con _init_worker.")
 
     try:
+        # Siempre se guarda la secuencia COMPLETA: descartar frames es barato y
+        # reversible al entrenar, pero recuperarlos cuesta re-extraer todo.
         sequence = sequence_from_video(
             Path(video_path),
             detector=_detector,
             frame_step=_options["frame_step"],
             max_frames=_options["max_frames"],
-            keep_empty_frames=_options["keep_empty_frames"],
+            keep_empty_frames=True,
         )
     except Exception as exc:  # un video corrupto no debe tirar toda la corrida
         return ExtractionResult(index=index, sequence=None, reason=f"error: {exc}")
 
-    if sequence is None:
+    if sequence is None or not len(sequence):
+        return ExtractionResult(index=index, sequence=None, reason="video ilegible o vacio")
+
+    # Los criterios de descarte se siguen midiendo sobre los frames CON mano,
+    # para que sean comparables con las extracciones anteriores.
+    from common.features import FEATURES_PER_HAND
+
+    con_mano = int(((sequence[:, 0] > 0) | (sequence[:, FEATURES_PER_HAND] > 0)).sum())
+    if con_mano == 0:
         return ExtractionResult(index=index, sequence=None, reason="sin frames con manos")
-    if len(sequence) < _options["min_seq_len"]:
+    if con_mano < _options["min_seq_len"]:
         return ExtractionResult(
             index=index,
             sequence=None,
-            reason=f"secuencia corta ({len(sequence)} < {_options['min_seq_len']})",
+            reason=f"secuencia corta ({con_mano} < {_options['min_seq_len']})",
         )
     return ExtractionResult(index=index, sequence=sequence.astype(np.float32, copy=False))
 
@@ -123,25 +139,79 @@ def extract_sequences(
         else:
             descartes.append((str(samples[result.index].path), result.reason or "desconocido"))
 
+    total = len(jobs)
+    inicio = time.perf_counter()
+
+    def _progreso(done: int) -> None:
+        # Al principio se informa seguido para que se vea que arranco; despues
+        # cada progress_every para no inundar la consola.
+        cada = 5 if done <= 25 else progress_every
+        if not cada or done % cada:
+            return
+        transcurrido = time.perf_counter() - inicio
+        restante = transcurrido / done * (total - done)
+        print(
+            f"  {done}/{total} videos"
+            f" | {transcurrido / 60:.1f} min transcurridos"
+            f" | faltan ~{restante / 60:.0f} min",
+            flush=True,
+        )
+
     if workers <= 1:
+        print("Procesando en un solo proceso (sin paralelismo)...", flush=True)
         _init_worker(options)
         try:
             for done, job in enumerate(jobs, start=1):
                 _register(_extract_one(job))
-                if progress_every and done % progress_every == 0:
-                    print(f"  {done}/{len(jobs)} videos", flush=True)
+                _progreso(done)
         finally:
             _close_worker()
         return sequences, descartes
 
     import multiprocessing as mp
 
+    # Este aviso importa: levantar los procesos implica importar MediaPipe en
+    # cada uno (spawn en Windows), lo que puede tardar ~30-60 s en silencio.
+    # Sin el mensaje, parece que el script se colgo y uno lo mata con Ctrl+C.
+    print(
+        f"Levantando {workers} procesos (cada uno importa MediaPipe, "
+        f"puede tardar ~1 min antes del primer avance)...",
+        flush=True,
+    )
+
     ctx = mp.get_context("spawn")
-    with ctx.Pool(processes=workers, initializer=_init_worker, initargs=(options,)) as pool:
-        for done, result in enumerate(pool.imap_unordered(_extract_one, jobs, chunksize=4), start=1):
+    pool = ctx.Pool(processes=workers, initializer=_init_worker, initargs=(options,))
+    try:
+        # chunksize=1 a proposito: con chunksize>1, imap_unordered envuelve el
+        # resultado en un generador que no expone .next(timeout=...), y ademas
+        # reparte peor la carga. Cada tarea tarda ~2,5 s, asi que el overhead
+        # de IPC por tarea es despreciable.
+        iterador = pool.imap_unordered(_extract_one, jobs, chunksize=1)
+        for done in range(1, total + 1):
+            try:
+                # Con timeout en vez de espera infinita: si un worker muere
+                # (MediaPipe puede caerse con algun video), imap_unordered se
+                # quedaria colgado para siempre sin decir nada.
+                result = iterador.next(timeout=WORKER_TIMEOUT_S)
+            except mp.TimeoutError:
+                print(
+                    f"\n[!] Ningun worker respondio en {WORKER_TIMEOUT_S} s "
+                    f"(iban {done - 1}/{total}).",
+                    flush=True,
+                )
+                print("[!] Reintenta con --workers 1 para ver que video lo traba.", flush=True)
+                raise
             _register(result)
-            if progress_every and done % progress_every == 0:
-                print(f"  {done}/{len(jobs)} videos", flush=True)
+            _progreso(done)
+    except BaseException as exc:
+        if isinstance(exc, KeyboardInterrupt):
+            print("\n[!] Interrumpido. No se guardo nada; hay que correrlo de nuevo.", flush=True)
+        pool.terminate()
+        pool.join()
+        raise
+    else:
+        pool.close()
+        pool.join()
 
     return sequences, descartes
 

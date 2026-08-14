@@ -48,7 +48,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frame-step", type=int, default=DEFAULT_FRAME_STEP)
     parser.add_argument("--max-frames", type=int, default=DEFAULT_MAX_FRAMES)
     parser.add_argument("--min-seq-len", type=int, default=DEFAULT_MIN_SEQUENCE_LEN)
-    parser.add_argument("--keep-empty-frames", action="store_true")
     parser.add_argument(
         "--workers",
         type=int,
@@ -97,6 +96,7 @@ def main() -> None:
     print(f"Sujetos : {len(sujetos)} -> {sujetos}")
     print(f"Workers : {workers}")
     print(f"Espejado: {ESPEJADO_CANONICO} (contrato ESPEJADO_CANONICO de common/features.py)")
+    print("Frames  : se guarda la secuencia completa; los sin mano se filtran al entrenar")
     if not sujetos:
         print("[!] Ningun video tiene sujeto identificable: el split no va a poder")
         print("    separar por persona y los resultados van a estar inflados.")
@@ -108,7 +108,7 @@ def main() -> None:
         frame_step=args.frame_step,
         max_frames=args.max_frames,
         min_seq_len=args.min_seq_len,
-        keep_empty_frames=args.keep_empty_frames,
+        keep_empty_frames=True,  # siempre completo; el filtro es del entrenamiento
         workers=workers,
     )
     elapsed = time.perf_counter() - start
@@ -128,7 +128,7 @@ def main() -> None:
             feature_vector_length=FEATURE_VECTOR_LENGTH,
             frame_step=args.frame_step,
             max_frames=args.max_frames,
-            keep_empty_frames=args.keep_empty_frames,
+            keep_empty_frames=True,
             espejado=ESPEJADO_CANONICO,
             min_seq_len=args.min_seq_len,
             dataset_dir=str(dataset_root),

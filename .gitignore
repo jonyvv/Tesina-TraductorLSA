@@ -28,7 +28,10 @@ ml/reports/*.png
 .DS_Store
 Thumbs.db
 .lsa64_cache
+
+# Documentos de la carrera (no son parte del código)
+/anteproyecto (1).docx
+/Arquitectura de traductor de señas RSA  (1).docx
+
 # Mantener estructura de carpetas vacías en git
 !**/.gitkeep
-anteproyecto (1).docx
-Arquitectura de traductor de señas RSA  (1).docx

@@ -86,6 +86,96 @@ def test_load_features_rechaza_cache_incompatible():
         raise AssertionError("deberia haber intentado re-extraer y fallado")
 
 
+def _cache_con_huecos(tmp: str) -> Path:
+    """Cache con la grilla temporal completa: algunos frames sin mano (todo en
+    ceros, ambos flags de presencia en 0) intercalados entre frames con mano."""
+    from common.features import FEATURES_PER_HAND
+
+    rng = np.random.default_rng(7)
+    sequences = []
+    for n_con, n_sin in ((20, 5), (12, 8), (30, 0), (4, 6)):
+        seq = rng.random((n_con + n_sin, 138), dtype=np.float32) + 0.1
+        seq[:n_sin] = 0.0  # los primeros n_sin frames no tienen mano
+        seq[n_sin:, 0] = 1.0  # flag de presencia izquierda en el resto
+        seq[n_sin:, FEATURES_PER_HAND] = 0.0
+        sequences.append(seq)
+
+    cache = FeatureCache(
+        sequences=sequences,
+        labels=[f"clase_{i:02d}" for i in range(4)],
+        subjects=[f"sujeto_{i:02d}" for i in range(4)],
+        paths=[f"v{i}.mp4" for i in range(4)],
+        splits=[None] * 4,
+        meta=build_meta(
+            feature_version="v1", feature_vector_length=138,
+            frame_step=2, max_frames=120, keep_empty_frames=True, min_seq_len=1,
+        ),
+    )
+    path = Path(tmp) / "completo.npz"
+    save_cache(path, cache)
+    return path
+
+
+def _config(cache_path: Path, tmp: str, **kwargs) -> LSA64TrainingConfig:
+    return LSA64TrainingConfig(
+        dataset_dir=Path(tmp) / "no-existe",
+        annotations=None,
+        output=Path(tmp) / "modelo.pt",
+        cache_path=cache_path,
+        **kwargs,
+    )
+
+
+def test_filtro_de_frames_vacios_deja_solo_los_que_tienen_mano():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = _cache_con_huecos(tmp)
+
+        completo = load_features(_config(path, tmp, keep_empty_frames=True, min_seq_len=1))
+        assert [len(s) for s in completo.sequences] == [25, 20, 30, 10]
+
+        filtrado = load_features(_config(path, tmp, keep_empty_frames=False, min_seq_len=1))
+        assert [len(s) for s in filtrado.sequences] == [20, 12, 30, 4]
+
+
+def test_min_seq_len_se_mide_despues_de_filtrar():
+    """El orden importa: con min_seq_len=8, la cuarta secuencia tiene 10 frames
+    en total pero solo 4 con mano, asi que en modo filtrado debe descartarse."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = _cache_con_huecos(tmp)
+
+        completo = load_features(_config(path, tmp, keep_empty_frames=True, min_seq_len=8))
+        assert len(completo.sequences) == 4, "con la grilla completa las 4 superan el minimo"
+
+        filtrado = load_features(_config(path, tmp, keep_empty_frames=False, min_seq_len=8))
+        assert len(filtrado.sequences) == 3
+        assert "clase_03" not in filtrado.labels
+
+
+def test_cache_sin_frames_vacios_no_puede_servir_el_modo_completo():
+    """Los frames descartados al extraer no se pueden recuperar: hay que avisar
+    en vez de entrenar en silencio con datos distintos a los pedidos."""
+    with tempfile.TemporaryDirectory() as tmp:
+        cache_path = Path(tmp) / "recortado.npz"
+        save_cache(cache_path, _cache_sintetico())  # meta: keep_empty_frames=True por defecto
+        # se fuerza el caso legado: cache extraido descartando frames
+        import json as _json
+
+        import numpy as _np
+        with _np.load(cache_path, allow_pickle=False) as data:
+            campos = {k: data[k] for k in data.files}
+        meta = _json.loads(str(campos["meta"]))
+        meta["keep_empty_frames"] = False
+        campos["meta"] = _np.array(_json.dumps(meta))
+        _np.savez_compressed(cache_path, **campos)
+
+        try:
+            load_features(_config(cache_path, tmp, keep_empty_frames=True))
+        except ValueError as exc:
+            assert "keep-empty-frames" in str(exc)
+            return
+        raise AssertionError("deberia haber avisado que el cache no sirve para ese modo")
+
+
 def test_min_seq_len_se_aplica_al_cargar_sin_reextraer():
     """Cambiar min_seq_len no debe invalidar el cache (solo filtra), pero si
     debe aplicarse: antes se ignoraba en silencio al leer del cache."""

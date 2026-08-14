@@ -44,13 +44,17 @@ INVALIDATING_KEYS = (
     "feature_vector_length",
     "frame_step",
     "max_frames",
-    "keep_empty_frames",
     # Orientacion de la imagen (contrato ESPEJADO_CANONICO de common/features.py).
     # Leandro documento que este contrato "no se puede validar automaticamente":
     # con esta clave si se puede, al menos para el cache. Un cache extraido con
     # otra orientacion tiene los slots de mano invertidos y no sirve.
     "espejado",
 )
+
+# keep_empty_frames NO invalida el cache: la extraccion guarda siempre la
+# secuencia completa y el entrenamiento decide si descarta los frames sin mano.
+# Se puede endurecer (tirar frames), nunca aflojar (inventarlos), asi que el
+# unico caso incompatible se chequea aparte en puede_servir_frames_completos().
 
 
 @dataclass
@@ -108,6 +112,13 @@ def incompatibilities(cache_meta: dict, expected_meta: dict) -> list[str]:
         if got != want:
             diffs.append(f"{key}: cache={got!r} pedido={want!r}")
     return diffs
+
+
+def puede_servir_frames_completos(cache_meta: dict) -> bool:
+    """True si el cache guarda la secuencia entera (incluidos los frames sin
+    mano). Si se extrajo descartandolos, esos frames se perdieron y no hay forma
+    de entrenar en modo completo sin volver a extraer."""
+    return bool(cache_meta.get("keep_empty_frames", False))
 
 
 def save_cache(path: Path, cache: FeatureCache) -> Path:
