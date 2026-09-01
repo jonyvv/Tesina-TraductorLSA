@@ -113,6 +113,69 @@ FEATURE_VECTOR_LENGTH = FEATURES_PER_HAND * NUM_HANDS  # 138
 #                                original sin espejar!)
 ESPEJADO_CANONICO = True
 
+# ---------------------------------------------------------------------------
+# Variante v2: ubicacion de la mano
+# ---------------------------------------------------------------------------
+# normalize_landmarks() centra en la muneca, asi que DONDE esta la mano en el
+# espacio se pierde: solo queda la forma. En una lengua de senas la ubicacion es
+# uno de los parametros fonologicos: dos senas con la misma configuracion y el
+# mismo movimiento pero hechas a distinta altura son indistinguibles en v1.
+#
+# v2 agrega la posicion de la muneca (landmark 0) en coordenadas de imagen
+# normalizadas por MediaPipe, o sea x,y en [0,1] y z relativo. Tres numeros por
+# mano.
+#
+# Limitacion conocida: la posicion queda referida al encuadre, no al cuerpo. En
+# LSA64 eso alcanza porque la camara es fija y hay marcas en el piso, pero para
+# la webcam habria que normalizar contra un punto del cuerpo (hombros o nariz
+# via MediaPipe Pose). El propio dataset publica las posiciones normalizadas
+# respecto de la cabeza, senal de que sus autores tambien lo consideraron
+# necesario.
+POSITION_PER_HAND = 3  # muneca: x, y, z
+
+FEATURES_PER_HAND_CON_POSICION = FEATURES_PER_HAND + POSITION_PER_HAND  # 72
+FEATURE_VECTOR_LENGTH_CON_POSICION = FEATURES_PER_HAND_CON_POSICION * NUM_HANDS  # 144
+FEATURE_VERSION_CON_POSICION = "v2"
+
+
+def per_hand_width(feature_vector_length: int) -> int:
+    """Ancho del bloque de una mano. NO usar la constante FEATURES_PER_HAND para
+    indexar: con v2 el bloque mide 72, no 69."""
+    return feature_vector_length // NUM_HANDS
+
+
+def incluye_posicion(feature_vector_length: int) -> bool:
+    return per_hand_width(feature_vector_length) == FEATURES_PER_HAND_CON_POSICION
+
+
+def presence_indices(feature_vector_length: int) -> list[int]:
+    """Indices del flag de presencia de cada mano, para cualquier version."""
+    ancho = per_hand_width(feature_vector_length)
+    return [mano * ancho for mano in range(NUM_HANDS)]
+
+
+def coord_slices(feature_vector_length: int) -> list[slice]:
+    """Bloque de coordenadas normalizadas de cada mano.
+
+    Excluye a proposito el flag de presencia, los angulos y —en v2— la posicion:
+    las coordenadas de imagen viven en [0,1] mientras las normalizadas van en
+    ~[-3,3], asi que un mismo sigma de ruido le pegaria muchisimo mas fuerte a la
+    posicion. Que la posicion sirva es una hipotesis a medir; agregarle ruido en
+    la misma corrida confundiria las dos cosas.
+    """
+    ancho = per_hand_width(feature_vector_length)
+    inicio = PRESENCE_FLAG_LEN + (POSITION_PER_HAND if incluye_posicion(feature_vector_length) else 0)
+    largo = NUM_LANDMARKS * COORDS_PER_LANDMARK
+    return [slice(mano * ancho + inicio, mano * ancho + inicio + largo) for mano in range(NUM_HANDS)]
+
+
+def feature_version_de(incluir_posicion: bool) -> str:
+    return FEATURE_VERSION_CON_POSICION if incluir_posicion else FEATURE_VERSION
+
+
+def feature_vector_length_de(incluir_posicion: bool) -> int:
+    return FEATURE_VECTOR_LENGTH_CON_POSICION if incluir_posicion else FEATURE_VECTOR_LENGTH
+
 # Cadenas de landmarks para calcular el ángulo de flexión de cada dedo
 # (base de la mano -> nudillo -> punta), igual criterio que el prototipo original.
 FINGER_CHAINS = [
@@ -170,26 +233,39 @@ def calculate_angles(landmarks_xyz: np.ndarray) -> list[float]:
     return angles
 
 
-def _hand_feature_vector(landmark_list) -> np.ndarray:
-    """`landmark_list`: lista de 21 NormalizedLandmark (con atributos .x .y .z)."""
+def _hand_feature_vector(landmark_list, incluir_posicion: bool = False) -> np.ndarray:
+    """`landmark_list`: lista de 21 NormalizedLandmark (con atributos .x .y .z).
+
+    Layout por mano: [presencia] (+ [muneca x,y,z] si v2) + [21x3 coords
+    normalizadas] + [5 angulos]. La posicion va pegada a la presencia para que el
+    flag quede siempre en el indice 0 del bloque, que es de lo que dependen el
+    filtrado de frames vacios y la augmentation.
+    """
     raw = np.array([[lm.x, lm.y, lm.z] for lm in landmark_list], dtype=np.float32)
     norm = normalize_landmarks(raw)
     angles = calculate_angles(norm)
-    presence = np.array([1.0], dtype=np.float32)
-    return np.concatenate(
-        [presence, norm.flatten().astype(np.float32), np.array(angles, dtype=np.float32)]
-    )
+    partes = [np.array([1.0], dtype=np.float32)]
+    if incluir_posicion:
+        # Muneca SIN normalizar: es justamente la informacion que
+        # normalize_landmarks() descarta.
+        partes.append(raw[0].astype(np.float32))
+    partes.append(norm.flatten().astype(np.float32))
+    partes.append(np.array(angles, dtype=np.float32))
+    return np.concatenate(partes)
 
 
-def _empty_hand_vector() -> np.ndarray:
-    return np.zeros(FEATURES_PER_HAND, dtype=np.float32)
+def _empty_hand_vector(incluir_posicion: bool = False) -> np.ndarray:
+    ancho = FEATURES_PER_HAND_CON_POSICION if incluir_posicion else FEATURES_PER_HAND
+    return np.zeros(ancho, dtype=np.float32)
 
 
 # ---------------------------------------------------------------------------
 # API pública — extracción a partir del resultado de MediaPipe Tasks
 # ---------------------------------------------------------------------------
 
-def build_feature_vector(hand_landmarker_result) -> FeatureExtractionResult:
+def build_feature_vector(
+    hand_landmarker_result, incluir_posicion: bool = False
+) -> FeatureExtractionResult:
     """
     Construye el vector de features de un frame a partir de un
     `mediapipe.tasks.vision.HandLandmarkerResult` (el resultado de
@@ -198,8 +274,8 @@ def build_feature_vector(hand_landmarker_result) -> FeatureExtractionResult:
     Devuelve siempre un vector de longitud FEATURE_VECTOR_LENGTH, aunque no se
     detecte ninguna mano (en ese caso, todo en ceros con presencia=False).
     """
-    left = _empty_hand_vector()
-    right = _empty_hand_vector()
+    left = _empty_hand_vector(incluir_posicion)
+    right = _empty_hand_vector(incluir_posicion)
     left_present = False
     right_present = False
 
@@ -209,7 +285,7 @@ def build_feature_vector(hand_landmarker_result) -> FeatureExtractionResult:
     for landmark_list, handedness in zip(hand_landmarks_list, handedness_list):
         # handedness es una lista de Category; tomamos la de mayor score (la [0]).
         label = handedness[0].category_name  # "Left" o "Right"
-        vec = _hand_feature_vector(landmark_list)
+        vec = _hand_feature_vector(landmark_list, incluir_posicion)
         if label == "Left":
             left = vec
             left_present = True

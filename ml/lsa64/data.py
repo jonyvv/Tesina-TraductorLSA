@@ -247,6 +247,7 @@ def sequence_from_video(
     frame_step: int,
     max_frames: int,
     keep_empty_frames: bool,
+    incluir_posicion: bool = False,
 ):
     import cv2
     import numpy as np
@@ -277,7 +278,7 @@ def sequence_from_video(
             if ESPEJADO_CANONICO:
                 frame = cv2.flip(frame, 1)
 
-            result = build_feature_vector(detector.process(frame))
+            result = build_feature_vector(detector.process(frame), incluir_posicion)
             if keep_empty_frames or result.any_hand_present():
                 frames.append(result.vector.astype(np.float32))
 

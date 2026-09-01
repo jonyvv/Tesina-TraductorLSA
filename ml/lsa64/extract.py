@@ -78,6 +78,7 @@ def _extract_one(job: tuple[int, str]) -> ExtractionResult:
             frame_step=_options["frame_step"],
             max_frames=_options["max_frames"],
             keep_empty_frames=True,
+            incluir_posicion=_options.get("incluir_posicion", False),
         )
     except Exception as exc:  # un video corrupto no debe tirar toda la corrida
         return ExtractionResult(index=index, sequence=None, reason=f"error: {exc}")
@@ -87,9 +88,12 @@ def _extract_one(job: tuple[int, str]) -> ExtractionResult:
 
     # Los criterios de descarte se siguen midiendo sobre los frames CON mano,
     # para que sean comparables con las extracciones anteriores.
-    from common.features import FEATURES_PER_HAND
+    # Indexar por el ancho REAL del vector, no por la constante: en v2 el bloque
+    # de cada mano mide 72 y no 69.
+    from common.features import presence_indices
 
-    con_mano = int(((sequence[:, 0] > 0) | (sequence[:, FEATURES_PER_HAND] > 0)).sum())
+    idx = presence_indices(sequence.shape[1])
+    con_mano = int(np.logical_or.reduce([sequence[:, i] > 0 for i in idx]).sum())
     if con_mano == 0:
         return ExtractionResult(index=index, sequence=None, reason="sin frames con manos")
     if con_mano < _options["min_seq_len"]:
@@ -114,6 +118,7 @@ def extract_sequences(
     max_frames: int,
     min_seq_len: int,
     keep_empty_frames: bool,
+    incluir_posicion: bool = False,
     workers: int | None = None,
     progress_every: int = 25,
 ) -> tuple[dict[int, np.ndarray], list[tuple[str, str]]]:
@@ -127,6 +132,7 @@ def extract_sequences(
         "max_frames": max_frames,
         "min_seq_len": min_seq_len,
         "keep_empty_frames": keep_empty_frames,
+        "incluir_posicion": incluir_posicion,
     }
     jobs = [(idx, str(sample.path)) for idx, sample in enumerate(samples)]
     sequences: dict[int, np.ndarray] = {}

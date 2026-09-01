@@ -105,12 +105,16 @@ def _extract_and_cache(config: LSA64TrainingConfig, cache_path: Path) -> Feature
 def _frames_con_mano(secuencia: np.ndarray) -> np.ndarray:
     """Máscara de frames donde MediaPipe detecto al menos una mano.
 
-    Los flags de presencia estan en la posicion 0 (mano izquierda) y
-    FEATURES_PER_HAND (derecha) del vector, ver common/features.py.
+    Los indices de los flags salen de presence_indices(): dependen del ancho
+    real del vector, porque el bloque de cada mano mide 69 en v1 y 72 en v2
+    (con la posicion de la muneca). Ver common/features.py.
     """
-    from common.features import FEATURES_PER_HAND
+    from common.features import presence_indices
 
-    return (secuencia[:, 0] > 0) | (secuencia[:, FEATURES_PER_HAND] > 0)
+    import numpy as _np
+
+    idx = presence_indices(secuencia.shape[1])
+    return _np.logical_or.reduce([secuencia[:, i] > 0 for i in idx])
 
 
 def _apply_frame_filter(cache: FeatureCache, keep_empty_frames: bool) -> FeatureCache:
@@ -352,6 +356,12 @@ def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
                     "frame_step": config.frame_step,
                     "max_frames": config.max_frames,
                     "seed": config.seed,
+                    "dropout": config.dropout,
+                    "weight_decay": config.weight_decay,
+                    "aug_noise": config.aug_noise,
+                    "aug_frame_drop": config.aug_frame_drop,
+                    "aug_time_scale": config.aug_time_scale,
+                    "keep_empty_frames": config.keep_empty_frames,
                 },
                 "split": {
                     "train_size": len(train_idx),

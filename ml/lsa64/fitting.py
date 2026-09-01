@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from common.features import FEATURE_VECTOR_LENGTH
 from common.models.lsa64 import BiLSTMClassifier
 
+from .augment import augmentar, hay_augmentation
 from .config import LSA64TrainingConfig
 
 
@@ -78,15 +78,30 @@ def _build_loaders(sequence_list, label_list, indices_por_split, config):
     from torch.utils.data import DataLoader, Dataset
 
     class SequenceDataset(Dataset):
-        def __init__(self, indices: list[int]):
+        def __init__(self, indices: list[int], augmentar_datos: bool = False):
             self.indices = indices
+            self.augmentar_datos = augmentar_datos
+            # RNG propio y seedeado: la augmentation tiene que variar entre
+            # epochs pero seguir siendo reproducible de punta a punta. Depende
+            # de que el orden de acceso sea determinista, que lo es porque el
+            # DataLoader usa un generador seedeado y corre sin workers.
+            self._rng = np.random.RandomState(config.seed) if augmentar_datos else None
 
         def __len__(self):
             return len(self.indices)
 
         def __getitem__(self, index):
             seq_idx = self.indices[index]
-            return torch.from_numpy(sequence_list[seq_idx]), int(label_list[seq_idx])
+            seq = sequence_list[seq_idx]
+            if self.augmentar_datos:
+                seq = augmentar(
+                    seq,
+                    self._rng,
+                    noise=config.aug_noise,
+                    frame_drop=config.aug_frame_drop,
+                    time_scale=config.aug_time_scale,
+                )
+            return torch.from_numpy(seq), int(label_list[seq_idx])
 
     def collate(batch):
         sequences_batch, labels_batch = zip(*batch)
@@ -101,8 +116,10 @@ def _build_loaders(sequence_list, label_list, indices_por_split, config):
     generador = torch.Generator()
     generador.manual_seed(config.seed)
 
+    # La augmentation va SOLO en train. Augmentar val o test cambiaria lo que
+    # se esta midiendo.
     train_loader = DataLoader(
-        SequenceDataset(train_idx),
+        SequenceDataset(train_idx, augmentar_datos=hay_augmentation(config)),
         batch_size=config.batch_size,
         shuffle=True,
         collate_fn=collate,
@@ -141,8 +158,24 @@ def ajustar_modelo(
     )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = BiLSTMClassifier(FEATURE_VECTOR_LENGTH, config.hidden_size, n_clases).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    # El ancho de entrada sale de los DATOS, no de la constante del modulo: v1
+    # da 138 y v2 (con posicion de la muneca) da 144, y el cache sabe cual es.
+    input_size = int(sequence_list[0].shape[1])
+    if input_size != config.feature_vector_length:
+        raise ValueError(
+            f"El cache trae vectores de {input_size} features pero la config espera "
+            f"{config.feature_vector_length}. Revisá --con-posicion."
+        )
+    model = BiLSTMClassifier(
+        input_size, config.hidden_size, n_clases, dropout=config.dropout
+    ).to(device)
+    # AdamW en vez de Adam: con weight_decay=0 son identicos (el termino de
+    # decay se anula), asi que el default no mueve el baseline; pero cuando se
+    # activa, AdamW aplica el decay desacoplado del gradiente adaptativo, que
+    # es la forma correcta de regularizar con Adam.
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
+    )
     criterion = torch.nn.CrossEntropyLoss()
 
     best_state = None

@@ -6022,7 +6022,7 @@
       63
     ]
   },
-  "duracion_segundos": 3623.5,
+  "duracion_segundos": 3313.1,
   "cache": "C:\\Users\\joniv\\Documents\\facultad\\Quinto\\tesis\\lsa-traductor\\lsa-traductor\\.lsa64_cache\\features_lsa64.npz",
   "cache_meta": {
     "cache_format_version": 1,
@@ -6030,12 +6030,13 @@
     "feature_vector_length": 138,
     "frame_step": 2,
     "max_frames": 120,
-    "keep_empty_frames": false,
+    "keep_empty_frames": true,
     "espejado": true,
     "min_seq_len": 8,
     "dataset_dir": ".lsa64_cache\\extracted\\all",
     "n_videos_encontrados": 3200,
     "n_descartados": 338,
-    "extraccion_segundos": 2764.6
+    "extraccion_segundos": 2838.4,
+    "keep_empty_frames_aplicado": false
   }
 }
