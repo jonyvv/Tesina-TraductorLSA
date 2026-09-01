@@ -1,330 +1,392 @@
 {
-  "_fuente": "https://midusi.github.io/lsa64/index.html y https://facundoq.github.io/datasets/lsa64/",
-  "_nota_red": "El listado publicado glosa 02 y 08 ambas como 'Red'. Verificado sobre las predicciones del LOSO: no se confunden entre si (0 de 92), o sea que son senas distintas. 08 queda como 'Red (var.)' hasta confirmar el nombre real contra el paper.",
+  "_fuente": "https://facundoq.github.io/datasets/lsa64/ (listado oficial, en ingles)",
+  "_nota_idioma": "El dataset es de Lengua de Senas Argentina pero su listado se publica solo en ingles. Las glosas en espanol son traduccion propia; el ingles publicado queda en ml/lsa64_labels_en.json para citar contra la literatura.",
+  "_nota_clase_08": "La pagina de midusi (mirror desactualizado) glosa 02 y 08 ambas como \"Red\". La pagina del mantenedor corrige 08 = \"Pink\". Coincide con la evidencia del LOSO: 02 y 08 no se confunden entre si (0 de 92). Se adopta Rosa.",
+  "_nota_glosas_inferidas": "El listado ordena alfabeticamente EN ESPANOL los tramos 29-43, 44-49 y 50-64, senal de que la lista original era en espanol. Eso fija dos glosas que la traduccion literal erraria: 037 \"Ship\" = Nave (entre Musica y Ninguno, no Barco) y 051 \"Thanks\" = Agradecer (entre Aceptar y Apagar, no Gracias). Localismos rioplatenses: 020 \"Sweet milk\" = Dulce de leche y 045 \"Barbecue\" = Asado. Sin confirmar: 009 \"Women\" (se adopta Mujer) y 048 \"Spaghetti\" (se adopta Fideos).",
   "senas": [
     {
       "clase": "001",
-      "nombre": "Opaque",
+      "nombre": "Opaco",
+      "nombre_en": "Opaque",
       "manos": 1
     },
     {
       "clase": "002",
-      "nombre": "Red",
+      "nombre": "Rojo",
+      "nombre_en": "Red",
       "manos": 1
     },
     {
       "clase": "003",
-      "nombre": "Green",
+      "nombre": "Verde",
+      "nombre_en": "Green",
       "manos": 1
     },
     {
       "clase": "004",
-      "nombre": "Yellow",
+      "nombre": "Amarillo",
+      "nombre_en": "Yellow",
       "manos": 1
     },
     {
       "clase": "005",
-      "nombre": "Bright",
+      "nombre": "Brillante",
+      "nombre_en": "Bright",
       "manos": 1
     },
     {
       "clase": "006",
-      "nombre": "Light-blue",
+      "nombre": "Celeste",
+      "nombre_en": "Light-blue",
       "manos": 1
     },
     {
       "clase": "007",
-      "nombre": "Colors",
+      "nombre": "Colores",
+      "nombre_en": "Colors",
       "manos": 1
     },
     {
       "clase": "008",
-      "nombre": "Red (var.)",
+      "nombre": "Rosa",
+      "nombre_en": "Pink",
       "manos": 1
     },
     {
       "clase": "009",
-      "nombre": "Women",
+      "nombre": "Mujer",
+      "nombre_en": "Women",
       "manos": 1
     },
     {
       "clase": "010",
-      "nombre": "Enemy",
+      "nombre": "Enemigo",
+      "nombre_en": "Enemy",
       "manos": 1
     },
     {
       "clase": "011",
-      "nombre": "Son",
+      "nombre": "Hijo",
+      "nombre_en": "Son",
       "manos": 1
     },
     {
       "clase": "012",
-      "nombre": "Man",
+      "nombre": "Hombre",
+      "nombre_en": "Man",
       "manos": 1
     },
     {
       "clase": "013",
-      "nombre": "Away",
+      "nombre": "Lejos",
+      "nombre_en": "Away",
       "manos": 1
     },
     {
       "clase": "014",
-      "nombre": "Drawer",
+      "nombre": "Cajón",
+      "nombre_en": "Drawer",
       "manos": 1
     },
     {
       "clase": "015",
-      "nombre": "Born",
+      "nombre": "Nacer",
+      "nombre_en": "Born",
       "manos": 1
     },
     {
       "clase": "016",
-      "nombre": "Learn",
+      "nombre": "Aprender",
+      "nombre_en": "Learn",
       "manos": 1
     },
     {
       "clase": "017",
-      "nombre": "Call",
+      "nombre": "Llamar",
+      "nombre_en": "Call",
       "manos": 1
     },
     {
       "clase": "018",
-      "nombre": "Skimmer",
+      "nombre": "Espumadera",
+      "nombre_en": "Skimmer",
       "manos": 1
     },
     {
       "clase": "019",
-      "nombre": "Bitter",
+      "nombre": "Amargo",
+      "nombre_en": "Bitter",
       "manos": 1
     },
     {
       "clase": "020",
-      "nombre": "Sweet milk",
+      "nombre": "Dulce de leche",
+      "nombre_en": "Sweet milk",
       "manos": 1
     },
     {
       "clase": "021",
-      "nombre": "Milk",
+      "nombre": "Leche",
+      "nombre_en": "Milk",
       "manos": 1
     },
     {
       "clase": "022",
-      "nombre": "Water",
+      "nombre": "Agua",
+      "nombre_en": "Water",
       "manos": 1
     },
     {
       "clase": "023",
-      "nombre": "Food",
+      "nombre": "Comida",
+      "nombre_en": "Food",
       "manos": 1
     },
     {
       "clase": "024",
       "nombre": "Argentina",
+      "nombre_en": "Argentina",
       "manos": 1
     },
     {
       "clase": "025",
       "nombre": "Uruguay",
+      "nombre_en": "Uruguay",
       "manos": 1
     },
     {
       "clase": "026",
-      "nombre": "Country",
+      "nombre": "País",
+      "nombre_en": "Country",
       "manos": 1
     },
     {
       "clase": "027",
-      "nombre": "Last name",
+      "nombre": "Apellido",
+      "nombre_en": "Last name",
       "manos": 1
     },
     {
       "clase": "028",
-      "nombre": "Where",
+      "nombre": "Dónde",
+      "nombre_en": "Where",
       "manos": 1
     },
     {
       "clase": "029",
-      "nombre": "Mock",
+      "nombre": "Burlarse",
+      "nombre_en": "Mock",
       "manos": 2
     },
     {
       "clase": "030",
-      "nombre": "Birthday",
+      "nombre": "Cumpleaños",
+      "nombre_en": "Birthday",
       "manos": 1
     },
     {
       "clase": "031",
-      "nombre": "Breakfast",
+      "nombre": "Desayuno",
+      "nombre_en": "Breakfast",
       "manos": 2
     },
     {
       "clase": "032",
-      "nombre": "Photo",
+      "nombre": "Foto",
+      "nombre_en": "Photo",
       "manos": 2
     },
     {
       "clase": "033",
-      "nombre": "Hungry",
+      "nombre": "Hambre",
+      "nombre_en": "Hungry",
       "manos": 1
     },
     {
       "clase": "034",
-      "nombre": "Map",
+      "nombre": "Mapa",
+      "nombre_en": "Map",
       "manos": 2
     },
     {
       "clase": "035",
-      "nombre": "Coin",
+      "nombre": "Moneda",
+      "nombre_en": "Coin",
       "manos": 2
     },
     {
       "clase": "036",
-      "nombre": "Music",
+      "nombre": "Música",
+      "nombre_en": "Music",
       "manos": 2
     },
     {
       "clase": "037",
-      "nombre": "Ship",
+      "nombre": "Nave",
+      "nombre_en": "Ship",
       "manos": 1
     },
     {
       "clase": "038",
-      "nombre": "None",
+      "nombre": "Ninguno",
+      "nombre_en": "None",
       "manos": 1
     },
     {
       "clase": "039",
-      "nombre": "Name",
+      "nombre": "Nombre",
+      "nombre_en": "Name",
       "manos": 1
     },
     {
       "clase": "040",
-      "nombre": "Patience",
+      "nombre": "Paciencia",
+      "nombre_en": "Patience",
       "manos": 1
     },
     {
       "clase": "041",
       "nombre": "Perfume",
+      "nombre_en": "Perfume",
       "manos": 1
     },
     {
       "clase": "042",
-      "nombre": "Deaf",
+      "nombre": "Sordo",
+      "nombre_en": "Deaf",
       "manos": 1
     },
     {
       "clase": "043",
-      "nombre": "Trap",
+      "nombre": "Trampa",
+      "nombre_en": "Trap",
       "manos": 2
     },
     {
       "clase": "044",
-      "nombre": "Rice",
+      "nombre": "Arroz",
+      "nombre_en": "Rice",
       "manos": 2
     },
     {
       "clase": "045",
-      "nombre": "Barbecue",
+      "nombre": "Asado",
+      "nombre_en": "Barbecue",
       "manos": 2
     },
     {
       "clase": "046",
-      "nombre": "Candy",
+      "nombre": "Caramelo",
+      "nombre_en": "Candy",
       "manos": 1
     },
     {
       "clase": "047",
-      "nombre": "Chewing-gum",
+      "nombre": "Chicle",
+      "nombre_en": "Chewing-gum",
       "manos": 1
     },
     {
       "clase": "048",
-      "nombre": "Spaghetti",
+      "nombre": "Fideos",
+      "nombre_en": "Spaghetti",
       "manos": 2
     },
     {
       "clase": "049",
-      "nombre": "Yogurt",
+      "nombre": "Yogur",
+      "nombre_en": "Yogurt",
       "manos": 2
     },
     {
       "clase": "050",
-      "nombre": "Accept",
+      "nombre": "Aceptar",
+      "nombre_en": "Accept",
       "manos": 2
     },
     {
       "clase": "051",
-      "nombre": "Thanks",
+      "nombre": "Agradecer",
+      "nombre_en": "Thanks",
       "manos": 2
     },
     {
       "clase": "052",
-      "nombre": "Shut down",
+      "nombre": "Apagar",
+      "nombre_en": "Shut down",
       "manos": 1
     },
     {
       "clase": "053",
-      "nombre": "Appear",
+      "nombre": "Aparecer",
+      "nombre_en": "Appear",
       "manos": 2
     },
     {
       "clase": "054",
-      "nombre": "To land",
+      "nombre": "Aterrizar",
+      "nombre_en": "To land",
       "manos": 2
     },
     {
       "clase": "055",
-      "nombre": "Catch",
+      "nombre": "Atrapar",
+      "nombre_en": "Catch",
       "manos": 2
     },
     {
       "clase": "056",
-      "nombre": "Help",
+      "nombre": "Ayudar",
+      "nombre_en": "Help",
       "manos": 2
     },
     {
       "clase": "057",
-      "nombre": "Dance",
+      "nombre": "Bailar",
+      "nombre_en": "Dance",
       "manos": 2
     },
     {
       "clase": "058",
-      "nombre": "Bathe",
+      "nombre": "Bañarse",
+      "nombre_en": "Bathe",
       "manos": 2
     },
     {
       "clase": "059",
-      "nombre": "Buy",
+      "nombre": "Comprar",
+      "nombre_en": "Buy",
       "manos": 1
     },
     {
       "clase": "060",
-      "nombre": "Copy",
+      "nombre": "Copiar",
+      "nombre_en": "Copy",
       "manos": 2
     },
     {
       "clase": "061",
-      "nombre": "Run",
+      "nombre": "Correr",
+      "nombre_en": "Run",
       "manos": 2
     },
     {
       "clase": "062",
-      "nombre": "Realize",
+      "nombre": "Darse cuenta",
+      "nombre_en": "Realize",
       "manos": 1
     },
     {
       "clase": "063",
-      "nombre": "Give",
+      "nombre": "Dar",
+      "nombre_en": "Give",
       "manos": 2
     },
     {
       "clase": "064",
-      "nombre": "Find",
+      "nombre": "Encontrar",
+      "nombre_en": "Find",
       "manos": 1
     }
-  ],
-  "resumen": {
-    "una_mano": 42,
-    "dos_manos": 22
-  }
+  ]
 }
