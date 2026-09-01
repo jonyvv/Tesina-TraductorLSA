@@ -52,6 +52,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-frames", type=int, default=120)
     parser.add_argument("--min-seq-len", type=int, default=8)
     parser.add_argument("--keep-empty-frames", action="store_true")
+    parser.add_argument(
+        "--con-posicion",
+        action="store_true",
+        help="v2: agrega la posicion de la muneca al vector (138 -> 144). "
+             "La ubicacion de la mano es un parametro fonologico que v1 descarta.",
+    )
+    # --- Regularizacion. Los defaults reproducen el baseline de 79,8 %.
+    parser.add_argument("--dropout", type=float, default=0.2, help="dropout antes de la capa final")
+    parser.add_argument("--weight-decay", type=float, default=0.0, help="L2 desacoplado (AdamW)")
+    parser.add_argument("--aug-noise", type=float, default=0.0,
+                        help="sigma del ruido gaussiano sobre coordenadas, solo en train")
+    parser.add_argument("--aug-frame-drop", type=float, default=0.0,
+                        help="probabilidad de descartar cada frame, solo en train")
+    parser.add_argument("--aug-time-scale", type=float, default=0.0,
+                        help="reescalado temporal aleatorio +-s, solo en train")
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -91,6 +106,12 @@ def main() -> None:
         max_frames=args.max_frames,
         min_seq_len=args.min_seq_len,
         keep_empty_frames=args.keep_empty_frames,
+        incluir_posicion=args.con_posicion,
+        dropout=args.dropout,
+        weight_decay=args.weight_decay,
+        aug_noise=args.aug_noise,
+        aug_frame_drop=args.aug_frame_drop,
+        aug_time_scale=args.aug_time_scale,
         seed=args.seed,
     )
     train_lsa64_model(config)

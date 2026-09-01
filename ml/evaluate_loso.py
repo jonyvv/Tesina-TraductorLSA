@@ -52,7 +52,30 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="conservar los frames sin mano detectada, preservando la grilla temporal",
     )
+    parser.add_argument(
+        "--con-posicion",
+        action="store_true",
+        help="v2: agrega la posicion de la muneca al vector (138 -> 144). "
+             "La ubicacion de la mano es un parametro fonologico que v1 descarta.",
+    )
+    # --- Regularizacion. Los defaults reproducen el baseline de 79,8 %.
+    parser.add_argument("--dropout", type=float, default=0.2, help="dropout antes de la capa final")
+    parser.add_argument("--weight-decay", type=float, default=0.0, help="L2 desacoplado (AdamW)")
+    parser.add_argument("--aug-noise", type=float, default=0.0,
+                        help="sigma del ruido gaussiano sobre coordenadas, solo en train")
+    parser.add_argument("--aug-frame-drop", type=float, default=0.0,
+                        help="probabilidad de descartar cada frame, solo en train")
+    parser.add_argument("--aug-time-scale", type=float, default=0.0,
+                        help="reescalado temporal aleatorio +-s, solo en train")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--solo-sujetos",
+        nargs="+",
+        default=None,
+        metavar="SUJETO",
+        help="corre solo esos folds (ej: sujeto_03 sujeto_08) para tantear rapido. "
+             "El reporte queda marcado como parcial y no es citable.",
+    )
     parser.add_argument("--verbose-epochs", action="store_true", help="imprime cada epoch de cada fold")
     return parser.parse_args()
 
@@ -78,6 +101,12 @@ def main() -> None:
         batch_size=args.batch_size,
         min_seq_len=args.min_seq_len,
         keep_empty_frames=args.keep_empty_frames,
+        incluir_posicion=args.con_posicion,
+        dropout=args.dropout,
+        weight_decay=args.weight_decay,
+        aug_noise=args.aug_noise,
+        aug_frame_drop=args.aug_frame_drop,
+        aug_time_scale=args.aug_time_scale,
         seed=args.seed,
     )
 
@@ -90,6 +119,7 @@ def main() -> None:
         config,
         val_subjects=args.val_subjects,
         verbose_epochs=args.verbose_epochs,
+        solo_sujetos=args.solo_sujetos,
     )
     reporte["duracion_segundos"] = round(time.perf_counter() - inicio, 1)
     reporte["cache"] = str(cache_path)
@@ -106,11 +136,18 @@ def main() -> None:
     print(f"[OK] Reporte guardado en: {salida}")
     print(f"     Duracion: {reporte['duracion_segundos'] / 60:.1f} min")
     print()
-    print("Para citar en la tesina:")
-    print(
-        f"  accuracy signer-independent (LOSO, 10 sujetos): "
-        f"{reporte['accuracy_media'] * 100:.1f}% +- {reporte['accuracy_desvio'] * 100:.1f}%"
-    )
+    if reporte.get("parcial"):
+        print("CORRIDA PARCIAL — no citable. Sirve para comparar configuraciones entre si:")
+        print(
+            f"  media sobre {', '.join(reporte['sujetos_evaluados'])}: "
+            f"{reporte['accuracy_media'] * 100:.1f}%"
+        )
+    else:
+        print("Para citar en la tesina:")
+        print(
+            f"  accuracy signer-independent (LOSO, {reporte['n_folds']} sujetos): "
+            f"{reporte['accuracy_media'] * 100:.1f}% +- {reporte['accuracy_desvio'] * 100:.1f}%"
+        )
 
 
 if __name__ == "__main__":

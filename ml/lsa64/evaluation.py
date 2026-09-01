@@ -126,13 +126,31 @@ def evaluar_loso(
     config: LSA64TrainingConfig,
     val_subjects: int = 1,
     verbose_epochs: bool = False,
+    solo_sujetos: list[str] | None = None,
 ) -> dict:
+    """`solo_sujetos` corre unicamente los folds de esos sujetos de test.
+
+    Sirve para tantear configuraciones contra los sujetos dificiles sin pagar
+    los 10 folds: el split unico con semilla 42 deja a sujeto_03 y sujeto_08
+    (los dos peores) en TRAIN, asi que es ciego justamente a lo que se quiere
+    mejorar. Un reporte parcial queda marcado con "parcial": true y NO se puede
+    citar como el resultado del trabajo.
+    """
     from sklearn.preprocessing import LabelEncoder
 
     label_encoder = LabelEncoder()
     label_list = label_encoder.fit_transform(cache.labels).astype(np.int64)
     clases = list(label_encoder.classes_)
     folds = construir_folds(cache.subjects, val_subjects=val_subjects)
+    n_folds_totales = len(folds)
+    if solo_sujetos:
+        pedidos = set(solo_sujetos)
+        desconocidos = pedidos - {f.test_subject for f in folds}
+        if desconocidos:
+            raise ValueError(f"sujetos inexistentes: {sorted(desconocidos)}")
+        folds = [f for f in folds if f.test_subject in pedidos]
+        print(f"[!] CORRIDA PARCIAL: {len(folds)} de {n_folds_totales} folds "
+              f"({', '.join(sorted(pedidos))}). No es citable como resultado.")
 
     print(f"Folds  : {len(folds)} (uno por sujeto)")
     print(f"Clases : {len(clases)}")
@@ -200,7 +218,10 @@ def evaluar_loso(
 
     return {
         "protocolo": "leave-one-subject-out",
+        "parcial": bool(solo_sujetos),
+        "sujetos_evaluados": sorted(f.test_subject for f in folds),
         "n_folds": len(folds),
+        "n_folds_del_protocolo_completo": n_folds_totales,
         "val_subjects_por_fold": val_subjects,
         "accuracy_media": media,
         "accuracy_desvio": desvio,
@@ -218,6 +239,12 @@ def evaluar_loso(
             "epochs_max": config.epochs,
             "patience": config.patience,
             "seed": config.seed,
+            "dropout": config.dropout,
+            "weight_decay": config.weight_decay,
+            "aug_noise": config.aug_noise,
+            "aug_frame_drop": config.aug_frame_drop,
+            "aug_time_scale": config.aug_time_scale,
+            "keep_empty_frames": config.keep_empty_frames,
         },
         "folds": resultados,
         "accuracy_por_clase": por_clase,
@@ -230,6 +257,9 @@ def imprimir_resumen(reporte: dict) -> None:
     print()
     print("=" * 62)
     print("RESULTADO LEAVE-ONE-SUBJECT-OUT")
+    if reporte.get("parcial"):
+        print(f"*** PARCIAL: {reporte['n_folds']} de "
+              f"{reporte['n_folds_del_protocolo_completo']} folds — solo para tantear ***")
     print("=" * 62)
     for r in reporte["folds"]:
         barra = "#" * int(round(r["test_accuracy"] * 40))
@@ -243,6 +273,7 @@ def imprimir_resumen(reporte: dict) -> None:
     print("=" * 62)
 
     peores = sorted(reporte["accuracy_por_clase"].items(), key=lambda kv: kv[1])[:8]
-    print("Clases mas dificiles (sobre el dataset completo):")
+    alcance = "los sujetos evaluados" if reporte.get("parcial") else "el dataset completo"
+    print(f"Clases mas dificiles (sobre {alcance}):")
     for clase, acc in peores:
         print(f"  {clase:<12} {acc:.2f}")

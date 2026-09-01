@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from common.features import FEATURE_VECTOR_LENGTH, FEATURE_VERSION
+from common.features import feature_vector_length_de, feature_version_de
 from lsa64.cache import FeatureCache, build_meta, save_cache
 from lsa64.config import (
     DEFAULT_FRAME_STEP,
@@ -48,6 +48,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frame-step", type=int, default=DEFAULT_FRAME_STEP)
     parser.add_argument("--max-frames", type=int, default=DEFAULT_MAX_FRAMES)
     parser.add_argument("--min-seq-len", type=int, default=DEFAULT_MIN_SEQUENCE_LEN)
+    parser.add_argument(
+        "--con-posicion",
+        action="store_true",
+        help="v2: agrega la posicion de la muneca al vector (138 -> 144). "
+             "La ubicacion de la mano es un parametro fonologico que v1 descarta.",
+    )
     parser.add_argument(
         "--workers",
         type=int,
@@ -109,6 +115,7 @@ def main() -> None:
         max_frames=args.max_frames,
         min_seq_len=args.min_seq_len,
         keep_empty_frames=True,  # siempre completo; el filtro es del entrenamiento
+        incluir_posicion=args.con_posicion,
         workers=workers,
     )
     elapsed = time.perf_counter() - start
@@ -124,8 +131,9 @@ def main() -> None:
         paths=[str(samples[i].path) for i in valid],
         splits=[samples[i].split for i in valid],
         meta=build_meta(
-            feature_version=FEATURE_VERSION,
-            feature_vector_length=FEATURE_VECTOR_LENGTH,
+            feature_version=feature_version_de(args.con_posicion),
+            feature_vector_length=feature_vector_length_de(args.con_posicion),
+            incluir_posicion=args.con_posicion,
             frame_step=args.frame_step,
             max_frames=args.max_frames,
             keep_empty_frames=True,

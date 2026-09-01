@@ -1,0 +1,330 @@
+{
+  "_fuente": "https://midusi.github.io/lsa64/index.html y https://facundoq.github.io/datasets/lsa64/",
+  "_nota_red": "El listado publicado glosa 02 y 08 ambas como 'Red'. Verificado sobre las predicciones del LOSO: no se confunden entre si (0 de 92), o sea que son senas distintas. 08 queda como 'Red (var.)' hasta confirmar el nombre real contra el paper.",
+  "senas": [
+    {
+      "clase": "001",
+      "nombre": "Opaque",
+      "manos": 1
+    },
+    {
+      "clase": "002",
+      "nombre": "Red",
+      "manos": 1
+    },
+    {
+      "clase": "003",
+      "nombre": "Green",
+      "manos": 1
+    },
+    {
+      "clase": "004",
+      "nombre": "Yellow",
+      "manos": 1
+    },
+    {
+      "clase": "005",
+      "nombre": "Bright",
+      "manos": 1
+    },
+    {
+      "clase": "006",
+      "nombre": "Light-blue",
+      "manos": 1
+    },
+    {
+      "clase": "007",
+      "nombre": "Colors",
+      "manos": 1
+    },
+    {
+      "clase": "008",
+      "nombre": "Red (var.)",
+      "manos": 1
+    },
+    {
+      "clase": "009",
+      "nombre": "Women",
+      "manos": 1
+    },
+    {
+      "clase": "010",
+      "nombre": "Enemy",
+      "manos": 1
+    },
+    {
+      "clase": "011",
+      "nombre": "Son",
+      "manos": 1
+    },
+    {
+      "clase": "012",
+      "nombre": "Man",
+      "manos": 1
+    },
+    {
+      "clase": "013",
+      "nombre": "Away",
+      "manos": 1
+    },
+    {
+      "clase": "014",
+      "nombre": "Drawer",
+      "manos": 1
+    },
+    {
+      "clase": "015",
+      "nombre": "Born",
+      "manos": 1
+    },
+    {
+      "clase": "016",
+      "nombre": "Learn",
+      "manos": 1
+    },
+    {
+      "clase": "017",
+      "nombre": "Call",
+      "manos": 1
+    },
+    {
+      "clase": "018",
+      "nombre": "Skimmer",
+      "manos": 1
+    },
+    {
+      "clase": "019",
+      "nombre": "Bitter",
+      "manos": 1
+    },
+    {
+      "clase": "020",
+      "nombre": "Sweet milk",
+      "manos": 1
+    },
+    {
+      "clase": "021",
+      "nombre": "Milk",
+      "manos": 1
+    },
+    {
+      "clase": "022",
+      "nombre": "Water",
+      "manos": 1
+    },
+    {
+      "clase": "023",
+      "nombre": "Food",
+      "manos": 1
+    },
+    {
+      "clase": "024",
+      "nombre": "Argentina",
+      "manos": 1
+    },
+    {
+      "clase": "025",
+      "nombre": "Uruguay",
+      "manos": 1
+    },
+    {
+      "clase": "026",
+      "nombre": "Country",
+      "manos": 1
+    },
+    {
+      "clase": "027",
+      "nombre": "Last name",
+      "manos": 1
+    },
+    {
+      "clase": "028",
+      "nombre": "Where",
+      "manos": 1
+    },
+    {
+      "clase": "029",
+      "nombre": "Mock",
+      "manos": 2
+    },
+    {
+      "clase": "030",
+      "nombre": "Birthday",
+      "manos": 1
+    },
+    {
+      "clase": "031",
+      "nombre": "Breakfast",
+      "manos": 2
+    },
+    {
+      "clase": "032",
+      "nombre": "Photo",
+      "manos": 2
+    },
+    {
+      "clase": "033",
+      "nombre": "Hungry",
+      "manos": 1
+    },
+    {
+      "clase": "034",
+      "nombre": "Map",
+      "manos": 2
+    },
+    {
+      "clase": "035",
+      "nombre": "Coin",
+      "manos": 2
+    },
+    {
+      "clase": "036",
+      "nombre": "Music",
+      "manos": 2
+    },
+    {
+      "clase": "037",
+      "nombre": "Ship",
+      "manos": 1
+    },
+    {
+      "clase": "038",
+      "nombre": "None",
+      "manos": 1
+    },
+    {
+      "clase": "039",
+      "nombre": "Name",
+      "manos": 1
+    },
+    {
+      "clase": "040",
+      "nombre": "Patience",
+      "manos": 1
+    },
+    {
+      "clase": "041",
+      "nombre": "Perfume",
+      "manos": 1
+    },
+    {
+      "clase": "042",
+      "nombre": "Deaf",
+      "manos": 1
+    },
+    {
+      "clase": "043",
+      "nombre": "Trap",
+      "manos": 2
+    },
+    {
+      "clase": "044",
+      "nombre": "Rice",
+      "manos": 2
+    },
+    {
+      "clase": "045",
+      "nombre": "Barbecue",
+      "manos": 2
+    },
+    {
+      "clase": "046",
+      "nombre": "Candy",
+      "manos": 1
+    },
+    {
+      "clase": "047",
+      "nombre": "Chewing-gum",
+      "manos": 1
+    },
+    {
+      "clase": "048",
+      "nombre": "Spaghetti",
+      "manos": 2
+    },
+    {
+      "clase": "049",
+      "nombre": "Yogurt",
+      "manos": 2
+    },
+    {
+      "clase": "050",
+      "nombre": "Accept",
+      "manos": 2
+    },
+    {
+      "clase": "051",
+      "nombre": "Thanks",
+      "manos": 2
+    },
+    {
+      "clase": "052",
+      "nombre": "Shut down",
+      "manos": 1
+    },
+    {
+      "clase": "053",
+      "nombre": "Appear",
+      "manos": 2
+    },
+    {
+      "clase": "054",
+      "nombre": "To land",
+      "manos": 2
+    },
+    {
+      "clase": "055",
+      "nombre": "Catch",
+      "manos": 2
+    },
+    {
+      "clase": "056",
+      "nombre": "Help",
+      "manos": 2
+    },
+    {
+      "clase": "057",
+      "nombre": "Dance",
+      "manos": 2
+    },
+    {
+      "clase": "058",
+      "nombre": "Bathe",
+      "manos": 2
+    },
+    {
+      "clase": "059",
+      "nombre": "Buy",
+      "manos": 1
+    },
+    {
+      "clase": "060",
+      "nombre": "Copy",
+      "manos": 2
+    },
+    {
+      "clase": "061",
+      "nombre": "Run",
+      "manos": 2
+    },
+    {
+      "clase": "062",
+      "nombre": "Realize",
+      "manos": 1
+    },
+    {
+      "clase": "063",
+      "nombre": "Give",
+      "manos": 2
+    },
+    {
+      "clase": "064",
+      "nombre": "Find",
+      "manos": 1
+    }
+  ],
+  "resumen": {
+    "una_mano": 42,
+    "dos_manos": 22
+  }
+}

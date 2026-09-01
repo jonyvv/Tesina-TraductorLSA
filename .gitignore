@@ -28,6 +28,12 @@ ml/reports/*.png
 Thumbs.db
 
 .lsa64_cache/extracted
+# Cache de features de LSA64 (33 MB por archivo, se regenera con ml/extract_features.py)
+.lsa64_cache/*.npz
+
+# Salidas de barridos de hiperparametros (scratch, no son el modelo servido)
+backend/models/_sweep.*
+
 
 # Documentos de la carrera (no son parte del código)
 /anteproyecto (1).docx

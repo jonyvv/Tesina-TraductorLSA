@@ -1,6 +1,6 @@
 # Próximos pasos y ajustes al anteproyecto
 
-_Actualizado: 10 de agosto de 2026 — después de la validación leave-one-subject-out._
+_Actualizado: 14 de agosto de 2026 — después de probar y descartar la hipótesis de la grilla temporal._
 
 ---
 
@@ -33,20 +33,71 @@ datos prácticamente idénticos.
 
 ### Por qué varía tanto: frames perdidos
 
-MediaPipe no detecta manos en entre el 20 % y el 42 % de los frames, según la persona.
-La correlación entre tasa de retención de frames y accuracy por sujeto es **0,62** (con
-n=10 es sugestivo, no concluyente): los dos sujetos peores son también los dos con peor
-retención.
+MediaPipe no detecta manos en entre el 24 % y el 42 % de los frames, según la persona
+(retención por sujeto: de 58,5 % en `sujeto_08` a 75,7 % en `sujeto_01`). La correlación
+entre tasa de retención y accuracy por sujeto es **0,68** (con n=10 es sugestivo, no
+concluyente): los dos sujetos peores son también los dos con peor retención.
 
-El problema no es solo perder información, es *cómo* se perdía: al extraer con
-`keep_empty_frames=False` los frames sin mano se eliminaban de la secuencia, cerrando los
-huecos. La LSTM recibía el gesto comprimido de forma irregular. Ejemplos medidos:
+### Hipótesis probada y descartada: preservar la grilla temporal
+
+Se sospechaba que el daño no era solo perder información sino *cómo* se perdía. Al
+extraer con `keep_empty_frames=False` los frames sin mano se eliminaban de la secuencia,
+cerrando los huecos, así que la LSTM recibía el gesto comprimido de forma irregular:
 `001_001_001.mp4` pasaba de 44 frames a 18, `040_002_001.mp4` de 61 a 16.
 
 Desde el 10/8 la extracción guarda **siempre la secuencia completa** y el descarte se
-aplica en memoria al entrenar (`--keep-empty-frames`), igual que `min_seq_len`. Así una
-sola extracción sirve para ambos experimentos. Verificado: filtrar el caché completo
-reproduce el caché anterior byte por byte.
+aplica en memoria al entrenar (`--keep-empty-frames`), lo que permitió medir las dos
+representaciones con el mismo protocolo y sobre el mismo caché.
+
+**Resultado: la hipótesis es falsa.** Preservar la grilla temporal rellenando los huecos
+con vectores en cero *empeora* el modelo.
+
+| Sujeto | Retención | Filtrado | Grilla completa | Δ |
+|---|---|---|---|---|
+| sujeto_01 | 75,7 % | 86,4 % | 79,4 % | −7,0 |
+| sujeto_02 | 73,7 % | 75,5 % | 72,9 % | −2,6 |
+| sujeto_03 | 63,5 % | 63,1 % | 62,8 % | −0,4 |
+| sujeto_04 | 68,3 % | 82,2 % | 80,1 % | −2,0 |
+| sujeto_05 | 65,5 % | 87,1 % | 74,6 % | −12,5 |
+| sujeto_06 | 73,7 % | 80,7 % | 75,7 % | −5,1 |
+| sujeto_07 | 73,2 % | 89,5 % | 82,2 % | −7,2 |
+| sujeto_08 | 58,5 % | 66,3 % | 72,8 % | **+6,5** |
+| sujeto_09 | 74,6 % | 85,5 % | 85,9 % | +0,3 |
+| sujeto_10 | 69,7 % | 81,9 % | 78,9 % | −3,0 |
+| **Media** | | **79,8 %** | **76,5 %** | **−3,3** |
+| **Desvío** | | **8,9 %** | **6,4 %** | **−2,5** |
+
+8 de 10 sujetos empeoraron. El desvío baja, pero **nivelando para abajo**: el techo cae
+de 89,5 % a 85,9 % mientras el piso queda clavado en ~63 %. La correlación
+retención-accuracy casi no se mueve (0,68 → 0,60), o sea que rellenar con ceros no
+desacopla la accuracy de la calidad de detección, que era todo el objetivo. Los epochs
+promedio quedan igual (25,7 → 24,6), así que tampoco es que le costara más converger.
+
+**Interpretación.** El problema no es que los frames se hayan *quitado*, es que *faltan*.
+Un vector en cero devuelve el timestamp pero no aporta información, y obliga a la red a
+gastar capacidad ignorando el 30 % de la entrada — con un modelo que ya sobreajusta
+(el loss de train baja a 0,12 mientras la validación se estanca en ~0,80 desde la
+epoch 11) el balance da negativo. Una BiLSTM tolera el
+time-warping mejor de lo que suponíamos, así que el costo de la compresión irregular era
+menor que el de inyectar entrada vacía.
+
+El único dato a favor que sobrevive es `sujeto_08`: la peor retención de todas (58,5 %) y
+la mayor mejora (+6,5). Pero `sujeto_05` tiene 65,5 % de retención y pierde 12,5 puntos,
+así que no hay patrón. Con n=10 no alcanza para afirmar nada.
+
+Reporte en `ml/reports/loso_lsa64_completo.json`. **La representación filtrada queda como
+la oficial**, y `--keep-empty-frames` no debe volver a proponerse como mejora sin un
+mecanismo distinto de relleno (interpolación o máscara explícita, no ceros).
+
+### Nota de reproducibilidad
+
+Dos verificaciones que conviene citar en la defensa:
+
+- Filtrar el caché de secuencias completas reconstruye el caché anterior **bit a bit**
+  (2862 de 2862 secuencias). Por eso correr el LOSO sin flags sobre el caché nuevo
+  devuelve 0,7981, idéntico al del caché viejo: no es un error, es la definición.
+- El pipeline es determinista: misma semilla → mismos folds → mismo resultado, incluso
+  cruzando una re-extracción completa de 47 minutos con MediaPipe.
 
 ### Bugs corregidos
 
@@ -108,13 +159,39 @@ La pérdida no está repartida pareja: `clase_40` conservó 16 de 50 muestras y 
 `min_hand_detection_confidence` en 0,4 y medir cuántas se recuperan. Hoy hay clases
 entrenando con un tercio de los datos.
 
-**2.5 Atacar el overfitting** · ~1 h
+**2.5 Atacar el overfitting** · herramientas listas desde el 14/8
 
-Loss de entrenamiento 0,064 contra val 0,79 — el modelo memoriza. A probar, en orden:
-weight decay, subir dropout, aumentar `hidden_size` con más regularización, y data
-augmentation barata sobre landmarks (espejado horizontal, jitter temporal, ruido
-gaussiano). El espejado tiene un detalle: hay que intercambiar los slots de mano
-izquierda/derecha del vector de features.
+En el split único reproducible (`backend/models/modelo_lsa64_lstm.json`, semilla 42) el
+loss de entrenamiento cae de 2,55 a 0,12 mientras la accuracy de validación deja de
+mejorar en la epoch 11 y el early stopping corta en la 19: el modelo sigue aprendiendo el
+train y deja de generalizar. Ahora que la hipótesis de la grilla temporal quedó
+descartada, **esta es la palanca más grande que queda medida**.
+
+Los flags ya están implementados, todos apagados por default para que una corrida sin
+argumentos siga reproduciendo el baseline de 79,8 % exactamente:
+
+| Flag | Qué hace |
+|---|---|
+| `--dropout` | dropout antes de la capa final (default 0,2, el que el modelo ya tenía fijo) |
+| `--weight-decay` | L2 desacoplado vía AdamW (con 0 es idéntico a Adam, no mueve el baseline) |
+| `--aug-frame-drop` | descarta cada frame con probabilidad *p*, solo en train |
+| `--aug-time-scale` | reescala la duración ±*s*, solo en train |
+| `--aug-noise` | ruido gaussiano σ sobre las coordenadas, solo en train |
+
+`--aug-frame-drop` es el más prometedor para este dataset: simula al sujeto con mala
+detección de manos, que es exactamente el caso que el modelo falla. La augmentation nunca
+toca el flag de presencia ni los frames vacíos, y nunca se aplica a validación ni a test.
+
+**Cómo barrer sin quemar horas.** Cada LOSO son ~55 min; un `train_lsa64.py` sobre el
+split único son segundos. Conviene tantear con `train_lsa64.py` para descartar
+configuraciones malas y confirmar solo las 2 o 3 finalistas con `evaluate_loso.py`. Ojo:
+el split único tiene ±5 puntos de ruido (86,05 / 78,55 / 81,25 sobre datos casi
+idénticos), así que sirve para descartar lo que empeora claramente, no para elegir entre
+candidatos parejos — esa decisión necesita LOSO sí o sí.
+
+Queda pendiente el **espejado horizontal** como augmentation: va aparte porque requiere
+intercambiar los slots de mano izquierda/derecha del vector de features, y en las 42 señas
+de una sola mano eso mueve de slot a la única mano presente.
 
 **2.6 Nombres reales de las señas** · ~30 min
 

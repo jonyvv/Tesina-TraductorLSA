@@ -97,10 +97,44 @@ python ml/train_lsa64.py --lr 5e-4 --batch-size 32
 
 Opciones útiles:
 
-- `--workers N` — procesos en paralelo para la extracción (por defecto, la mitad de los hilos).
-- `--refresh-cache` — fuerza volver a extraer (necesario si cambiás `--frame-step` o `--max-frames`; el cache se invalida solo, igual).
-- `--labels-map labels.json` — nombres legibles de las señas (`{"001": "Opaco", ...}`). Por defecto usa `clase_01`..`clase_64`.
-- `--limit N` en `extract_features.py` — prueba rápida sobre N videos.
+Los dos scripts no aceptan los mismos flags. Cuál va con cuál:
+
+- `--workers N` (ambos) — procesos en paralelo para la extracción (por defecto, la mitad de los hilos).
+- `--labels-map labels.json` (ambos) — nombres legibles de las señas (`{"001": "Opaco", ...}`). Por defecto usa `clase_01`..`clase_64`.
+- `--limit N` (solo `extract_features.py`) — prueba rápida sobre N videos.
+- `--refresh-cache` (solo `train_lsa64.py`) — fuerza volver a extraer antes de entrenar, necesario si cambiás `--frame-step` o `--max-frames`; igual el cache se invalida solo. **`extract_features.py` no tiene este flag**: siempre reextrae y pisa el `.npz` de salida, así que para regenerar el cache alcanza con correrlo sin argumentos extra (guardá una copia antes si querés conservar el anterior).
+- `--keep-empty-frames` (solo `train_lsa64.py` y `evaluate_loso.py`) — conserva los frames sin mano, preservando la grilla temporal. La extracción siempre guarda la secuencia completa; este flag decide qué se usa al entrenar.
+- `--con-posicion` (los tres) — features **v2**: agrega la posición de la muñeca al vector (138 → 144). Hay que pasarlo tanto al extraer como al entrenar, si no el chequeo de compatibilidad del caché rechaza la corrida.
+- `--labels-map ml/lsa64_labels.json` — nombres reales de las 64 señas (`Opaque`, `Learn`, `Candy`, …) en vez de `clase_01`..`clase_64`.
+
+#### Features v1 vs v2: la ubicación de la mano
+
+`normalize_landmarks()` centra los landmarks en la muñeca, así que **v1 conserva
+la forma de la mano pero descarta dónde está**. En una lengua de señas la
+ubicación es un parámetro fonológico: dos señas con la misma configuración y el
+mismo movimiento hechas a distinta altura son indistinguibles en v1.
+
+v2 (`--con-posicion`) agrega la muñeca sin normalizar, 3 números por mano:
+
+```bash
+# Extraer a un cache aparte, para no pisar el de v1
+python ml/extract_features.py --dataset-dir .lsa64_cache/extracted/all --con-posicion --output .lsa64_cache/features_v2.npz
+
+# Entrenar y evaluar contra ese cache
+python ml/train_lsa64.py --cache .lsa64_cache/features_v2.npz --con-posicion --output backend/models/_v2.pt
+python ml/evaluate_loso.py --cache .lsa64_cache/features_v2.npz --con-posicion --output ml/reports/loso_v2.json
+```
+
+`feature_version` y `feature_vector_length` son campos **derivados** de
+`--con-posicion`: no se pueden contradecir. Y como el caché los guarda en su
+metadata y ambos invalidan, mezclar un caché v2 con un entrenamiento v1 falla con
+un mensaje claro en vez de entrenar con basura.
+
+**Limitación:** la posición queda referida al encuadre, no al cuerpo. En LSA64
+alcanza porque la cámara es fija y hay marcas en el piso; para la webcam habría
+que normalizar contra un punto del cuerpo (MediaPipe Pose). El backend sigue
+generando vectores v1 y **rechaza un modelo v2 con un error explícito** — la
+integración es un paso aparte, solo si el experimento gana.
 
 También podés seguir pasando `--dataset-archive` o `--download-url`: si no hay
 cache, `train_lsa64.py` extrae y lo genera solo.
