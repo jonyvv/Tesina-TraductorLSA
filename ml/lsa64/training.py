@@ -9,6 +9,7 @@ hay cache disponible, se extrae al vuelo y se guarda para la proxima.
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -181,6 +182,56 @@ def _apply_min_seq_len(cache: FeatureCache, min_seq_len: int) -> FeatureCache:
     )
 
 
+def nombres_de_clases(clases, labels_map: Path | None) -> list[str]:
+    """Traduce clase_NN -> nombre real de la sena, para MOSTRAR.
+
+    Se aplica al final, sobre las clases ya codificadas, y nunca antes: el
+    LabelEncoder ordena alfabeticamente, asi que si los nombres entraran al
+    entrenamiento cambiarian que indice le toca a cada sena y el modelo saldria
+    distinto segun el --labels-map que se haya pasado. Con clase_01..clase_64 el
+    orden alfabetico coincide con el numerico, y ese es el orden canonico.
+
+    Medido: entrenar con los nombres adentro movia el resultado de 0,8125 a
+    0,8159 y el best_epoch de 11 a 32 sobre datos identicos. El nombre es
+    presentacion; la identidad de la clase es el id.
+
+    Por lo mismo el cache guarda siempre el id canonico: si guardara el nombre,
+    cambiar el mapa obligaria a re-extraer 47 minutos y dos caches que en
+    realidad son iguales quedarian marcados como incompatibles.
+    """
+    canonicas = [str(c) for c in clases]
+    if not labels_map:
+        return canonicas
+
+    mapa = load_label_map(labels_map)
+    if not mapa:
+        return canonicas
+
+    def traducir(label: str) -> str:
+        match = re.fullmatch(r"clase_(\d+)", label)
+        if not match:
+            return label  # ya tiene nombre real: idempotente
+        return mapa.get(f"{int(match.group(1)):03d}", label)
+
+    nombres = [traducir(label) for label in canonicas]
+
+    # "Sin nombre" es la que quedo como clase_NN, no la que ya venia con nombre:
+    # sobre una lista ya traducida esto no tiene que avisar nada.
+    sin_nombre = [n for n in nombres if re.fullmatch(r"clase_\d+", n)]
+    if sin_nombre:
+        print(f"[!] {len(sin_nombre)} clases sin nombre en el mapa: {', '.join(sin_nombre[:5])}")
+
+    repetidos = sorted({n for n in nombres if nombres.count(n) > 1})
+    if repetidos:
+        # Dos clases con el mismo nombre se pisan en los reportes por clase y en
+        # lo que ve el usuario, aunque el modelo las distinga perfectamente.
+        print(f"[!] Nombres repetidos en el mapa: {', '.join(repetidos)}")
+
+    traducidas = len(canonicas) - len(sin_nombre)
+    print(f"Nombres de senas tomados de {labels_map.name}: {traducidas}/{len(canonicas)} clases.")
+    return nombres
+
+
 def _postprocesar(cache: FeatureCache, config: LSA64TrainingConfig) -> FeatureCache:
     """Filtros que se aplican en memoria al cargar. El orden importa: primero
     se descartan los frames sin mano, y recien despues se mide el largo minimo
@@ -260,6 +311,9 @@ def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
 
     label_encoder = LabelEncoder()
     label_list = label_encoder.fit_transform(cache.labels).astype(np.int64)
+    # El encoder se ajusta SIEMPRE sobre los ids canonicos; los nombres son
+    # solo para mostrar y no entran al entrenamiento. Ver nombres_de_clases().
+    clases_mostradas = nombres_de_clases(label_encoder.classes_, config.labels_map)
     train_idx, val_idx, test_idx = train_val_test_split(metadata, config.seed)
     if not train_idx or not test_idx:
         raise ValueError("El split quedo vacio: revisa los sujetos/labels del dataset.")
@@ -302,7 +356,7 @@ def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
     print()
     print(f"[RESULTADO] test accuracy: {test_acc:.4f}")
 
-    per_class = _per_class_accuracy(y_true, y_pred, label_encoder.classes_)
+    per_class = _per_class_accuracy(y_true, y_pred, clases_mostradas)
     peores = sorted(per_class.items(), key=lambda kv: kv[1])[:5]
     if peores:
         print("Clases con peor accuracy:", ", ".join(f"{k}={v:.2f}" for k, v in peores))
@@ -311,7 +365,7 @@ def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
     torch.save(
         {
             "model_state_dict": model.state_dict(),
-            "label_classes": list(label_encoder.classes_),
+            "label_classes": list(clases_mostradas),
             "feature_version": config.feature_version,
             "feature_vector_length": config.feature_vector_length,
             "hidden_size": config.hidden_size,
@@ -342,7 +396,9 @@ def train_lsa64_model(config: LSA64TrainingConfig) -> Path:
                 "dataset": "LSA64",
                 "feature_version": config.feature_version,
                 "feature_vector_length": config.feature_vector_length,
-                "labels": list(label_encoder.classes_),
+                "labels": list(clases_mostradas),
+                "labels_canonicas": [str(c) for c in label_encoder.classes_],
+                "labels_map": str(config.labels_map) if config.labels_map else None,
                 "test_accuracy": test_acc,
                 "best_val_accuracy": best_val_acc if use_validation else None,
                 "best_epoch": best_epoch if use_validation else None,
