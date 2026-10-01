@@ -242,8 +242,16 @@ autocontenida. El modelo entrenado (`backend/models/modelo_lse.joblib`) se copia
 si existe: se versiona junto al backend, nunca se entrena en producción.
 
 En Render/Railway el puerto llega por la variable `$PORT` y el contenedor ya la
-respeta. Antes de la entrega final hay que restringir `allow_origins` en
-`backend/app/main.py` al dominio real (hoy está en `"*"` para desarrollo).
+respeta. Los orígenes CORS se configuran con `LSA_CORS_ORIGINS` (separados por
+coma); sin la variable se acepta cualquiera, que sirve en local. En el deploy hay
+que definirla con el dominio real:
+
+```bash
+docker run --rm -p 8000:8000 -e LSA_CORS_ORIGINS=https://traductor-lsa.onrender.com traductor-lsa
+```
+
+La imagen instala PyTorch desde el índice de ruedas CPU: la versión por defecto
+trae ~2,5 GB de CUDA que el contenedor no usa.
 
 ## Tests
 

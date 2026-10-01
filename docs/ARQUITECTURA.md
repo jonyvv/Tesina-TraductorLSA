@@ -312,7 +312,7 @@ Conforme a las limitaciones del anteproyecto (capa gratuita de Render/Railway/GC
 - **Dependencia de PyTorch**: hace falta solo para servir el `.pt`, pero como ese es el modelo que se elige por defecto, está declarada en `backend/requirements.txt`. En el contenedor conviene instalar la rueda CPU (`--index-url https://download.pytorch.org/whl/cpu`): son ~200 MB en vez de ~2,5 GB, y la GPU no se usa para inferir de a una ventana por vez.
 - **Puerto**: Render y Railway lo inyectan por `$PORT`; el contenedor lo respeta y cae a 8000 en local.
 - **Usuario**: el contenedor corre como usuario sin privilegios, no como root.
-- **CORS**: restringir `allow_origins` al dominio real antes de la entrega final (hoy está en `"*"` para desarrollo).
+- **CORS**: los orígenes permitidos salen de la variable de entorno `LSA_CORS_ORIGINS` (separados por coma). Sin la variable se acepta cualquiera (desarrollo); en el deploy se fija al dominio real desde el panel de la plataforma, sin tocar código.
 
 ## 9. Experimentos sugeridos para la tesina
 
