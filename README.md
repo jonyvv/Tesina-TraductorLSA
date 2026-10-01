@@ -114,7 +114,7 @@ Los dos scripts no aceptan los mismos flags. Cuál va con cuál:
 - `--refresh-cache` (solo `train_lsa64.py`) — fuerza volver a extraer antes de entrenar, necesario si cambiás `--frame-step` o `--max-frames`; igual el cache se invalida solo. **`extract_features.py` no tiene este flag**: siempre reextrae y pisa el `.npz` de salida, así que para regenerar el cache alcanza con correrlo sin argumentos extra (guardá una copia antes si querés conservar el anterior).
 - `--keep-empty-frames` (solo `train_lsa64.py` y `evaluate_loso.py`) — conserva los frames sin mano, preservando la grilla temporal. La extracción siempre guarda la secuencia completa; este flag decide qué se usa al entrenar.
 - `--con-posicion` (los tres) — features **v2**: agrega la posición de la muñeca al vector (138 → 144). Hay que pasarlo tanto al extraer como al entrenar, si no el chequeo de compatibilidad del caché rechaza la corrida.
-- `--labels-map ml/lsa64_labels.json` — nombres reales de las 64 señas (`Opaque`, `Learn`, `Candy`, …) en vez de `clase_01`..`clase_64`.
+- `--labels-map ml/lsa64_labels.json` — glosas en castellano de las 64 señas (`Opaco`, `Aprender`, `Caramelo`, …) en vez de `clase_01`..`clase_64`. Las publicadas en inglés están en `ml/lsa64_labels_en.json`.
 
 #### Features v1 vs v2: la ubicación de la mano
 
@@ -196,10 +196,10 @@ El backend ahora detecta automáticamente `backend/models/modelo_lsa64_lstm.pt`
 si existe; si no, sigue usando `modelo_lse.joblib`. Para servir el `.pt`
 necesitás instalar `torch` en el entorno del backend.
 
-**Los pesos entrenados no se versionan.** `.gitignore` excluye `backend/models/*.pt`
-y `.joblib`, y también el cache `.lsa64_cache/` (~33 MB). Quien clone el repo tiene
-el código pero no los pesos: hay que reentrenar (etapa 1 + etapa 2) o pasarse el
-`.pt` por fuera de git.
+**Qué se versiona y qué no.** El modelo servido (`backend/models/modelo_lsa64_lstm.pt`,
+~1,5 MB) y su resumen `.json` **sí** están en git: quien clone el repo puede levantar el
+backend sin reentrenar. Los `.joblib` y el caché `.lsa64_cache/` (~33 MB por archivo)
+no se versionan; el caché se regenera con la etapa 1.
 
 ### 2. Backend
 
@@ -289,3 +289,7 @@ de descarga del modelo descripto arriba. Ver el comentario al inicio de
 
 Ver `docs/ARQUITECTURA.md` para el detalle de cada decisión de diseño y los
 experimentos sugeridos para la sección de resultados de la tesina.
+
+El documento de la tesina (borrador completo, Word/PDF) se genera desde
+`docs/tesina/` — ver `docs/tesina/README.md` y el plan de trabajo en
+`docs/tesina/PLAN.md`.
