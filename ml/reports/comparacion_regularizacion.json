@@ -1,0 +1,105 @@
+{
+  "modelo_a": "Regularizada",
+  "modelo_b": "Baseline",
+  "media_a": 0.816801014851568,
+  "media_b": 0.7981172769721461,
+  "desvio_a": 0.07917537682454408,
+  "desvio_b": 0.08900661797258351,
+  "diferencia_media": 0.018683737879421902,
+  "por_sujeto": {
+    "sujeto_01": {
+      "Regularizada": 0.8636,
+      "Baseline": 0.8636,
+      "diferencia": 0.0
+    },
+    "sujeto_02": {
+      "Regularizada": 0.8399,
+      "Baseline": 0.7549,
+      "diferencia": 0.085
+    },
+    "sujeto_03": {
+      "Regularizada": 0.6667,
+      "Baseline": 0.6312,
+      "diferencia": 0.0355
+    },
+    "sujeto_04": {
+      "Regularizada": 0.8721,
+      "Baseline": 0.8215,
+      "diferencia": 0.0505
+    },
+    "sujeto_05": {
+      "Regularizada": 0.8828,
+      "Baseline": 0.8711,
+      "diferencia": 0.0117
+    },
+    "sujeto_06": {
+      "Regularizada": 0.7872,
+      "Baseline": 0.8074,
+      "diferencia": -0.0203
+    },
+    "sujeto_07": {
+      "Regularizada": 0.9178,
+      "Baseline": 0.8947,
+      "diferencia": 0.023
+    },
+    "sujeto_08": {
+      "Regularizada": 0.705,
+      "Baseline": 0.6628,
+      "diferencia": 0.0421
+    },
+    "sujeto_09": {
+      "Regularizada": 0.8257,
+      "Baseline": 0.8553,
+      "diferencia": -0.0296
+    },
+    "sujeto_10": {
+      "Regularizada": 0.8074,
+      "Baseline": 0.8185,
+      "diferencia": -0.0111
+    }
+  },
+  "sujetos_gana_a": 6,
+  "sujetos_gana_b": 3,
+  "diferencia_media_pareada": 0.018683737879421913,
+  "diferencia_desvio_pareada": 0.03557694431650619,
+  "wilcoxon": {
+    "estadistico": 9.0,
+    "p_valor": 0.12890625,
+    "n": 10
+  },
+  "mcnemar": {
+    "aciertan_ambos": 2142,
+    "falla_ambos": 374,
+    "acierta_solo_Regularizada": 200,
+    "acierta_solo_Baseline": 146,
+    "n_discordantes": 346,
+    "p_valor": 0.004314217928456152,
+    "predicciones_identicas": 2382,
+    "proporcion_predicciones_identicas": 0.8323
+  },
+  "clases_donde_gana_a": {
+    "clase_29": 0.2223,
+    "clase_18": 0.18,
+    "clase_53": 0.1795,
+    "clase_23": 0.1707,
+    "clase_51": 0.1633,
+    "clase_05": 0.16,
+    "clase_60": 0.15,
+    "clase_12": 0.1304
+  },
+  "clases_donde_gana_b": {
+    "clase_14": -0.1786,
+    "clase_40": -0.1364,
+    "clase_01": -0.12,
+    "clase_57": -0.1177,
+    "clase_25": -0.1,
+    "clase_36": -0.08,
+    "clase_38": -0.06,
+    "clase_49": -0.06
+  },
+  "n_clases_gana_a": 31,
+  "n_clases_gana_b": 24,
+  "n_clases_empate": 9,
+  "reporte_a": "ml\\reports\\loso_do40_fd30.json",
+  "reporte_b": "ml\\reports\\loso_lsa64.json"
+}

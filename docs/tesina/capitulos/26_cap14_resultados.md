@@ -135,7 +135,39 @@ Para evaluar rápidamente las técnicas contra el sobreajuste se utilizó la eva
 - **Descarte aleatorio de cuadros con probabilidad 0,30**: 66,38 %, una mejora de 1,7 puntos, también en las dos personas. Es la técnica que simula directamente a una persona con mala detección, el caso en que el modelo falla.
 - **Representación v2 con la ubicación de la muñeca**: 64,26 %, sin mejora.
 
-Estos resultados deben leerse con cautela: son dos particiones de diez y las diferencias son pequeñas. Indican qué variantes vale la pena confirmar, no que mejoren el modelo. [[PENDIENTE (tarea M1 del plan): confirmar con el LOSO completo la combinación de dropout 0,4 y descarte de cuadros 0,30, y, si mejora, reentrenar el modelo servido.]]
+Estos resultados deben leerse con cautela: son dos particiones de diez y las diferencias son pequeñas. Indican qué variantes vale la pena confirmar, no que mejoren el modelo.
+
+### 14.6.3 Confirmación con el LOSO completo: la regularización mejora
+
+La combinación de las dos variantes prometedoras —dropout 0,4 y descarte aleatorio de cuadros con probabilidad 0,30— se evaluó con el protocolo completo de diez particiones, sobre el mismo caché y con la misma semilla.
+
+> Exactitud independiente del sujeto con regularización: **81,7 % ± 7,9 %**, contra 79,8 % ± 8,9 % de la configuración de referencia.
+
+Tabla: Efecto de la regularización (dropout 0,4 y descarte de cuadros 0,30) por persona, con el protocolo LOSO completo. {#tab:regularizacion}
+
+| Persona de prueba | Referencia | Con regularización | Diferencia |
+|---|---|---|---|
+| S01 | 86,4 % | 86,4 % | 0,0 |
+| S02 | 75,5 % | 84,0 % | +8,5 |
+| S03 | 63,1 % | 66,7 % | +3,5 |
+| S04 | 82,2 % | 87,2 % | +5,1 |
+| S05 | 87,1 % | 88,3 % | +1,2 |
+| S06 | 80,7 % | 78,7 % | −2,0 |
+| S07 | 89,5 % | 91,8 % | +2,3 |
+| S08 | 66,3 % | 70,5 % | +4,2 |
+| S09 | 85,5 % | 82,6 % | −3,0 |
+| S10 | 81,8 % | 80,7 % | −1,1 |
+| **Media ± desvío** | **79,8 % ± 8,9 %** | **81,7 % ± 7,9 %** | **+1,9** |
+
+La mejora es de 1,9 puntos y, a diferencia del experimento de la grilla temporal (sección 14.6.1), **no se consigue nivelando hacia abajo**: el mínimo sube de 63,1 % a 66,7 %, el máximo de 89,5 % a 91,8 % y el desvío baja de 8,9 a 7,9. Las dos personas más difíciles, S03 y S08, mejoran 3,5 y 4,2 puntos, que era el objetivo declarado al elegir estas técnicas.
+
+Con el mismo par de pruebas pareadas que en la sección 14.7.1: Wilcoxon sobre las diez personas da p = 0,13 —con diez observaciones y seis mejoras contra tres empeoramientos, no alcanza—, y McNemar sobre las 2862 predicciones da **p = 0,004**: de las 346 secuencias en que las dos configuraciones difieren, la regularizada acierta 200 y la de referencia 146. La evidencia a nivel de muestra es más fuerte que la de la línea base no neuronal (p = 0,04), y en la dirección esperada.
+
+La interpretación es coherente con el diagnóstico de la sección 14.3: el modelo sobreajustaba, y las dos técnicas atacan eso. El descarte aleatorio de cuadros, además, simula durante el entrenamiento exactamente la situación que el sistema sufre en la práctica —una persona cuyas manos se detectan mal (sección 14.5)—, lo que explica que las mayores ganancias caigan en las personas con peor retención.
+
+**El modelo servido se reentrenó con esta configuración.** Sobre el reparto único de referencia obtiene 83,95 % de exactitud de prueba, frente al 81,25 % anterior; ese número arrastra la variabilidad del reparto único (sección 14.1) y se informa sólo por continuidad con el modelo anterior: el resultado defendible es el LOSO.
+
+[[PENDIENTE (decisión de los autores): si esta configuración queda como la definitiva, el resultado principal de la tesina pasa a ser 81,7 % ± 7,9 % y hay que actualizarlo en la sección 14.2, en el resumen, en las conclusiones y en el anteproyecto, además de regenerar las figuras desde `ml/reports/loso_do40_fd30.json`. Mientras tanto el documento informa 79,8 % como resultado principal y esta sección como una mejora medida, que es la situación que corresponde hasta tomar esa decisión.]]
 
 El resultado de la representación v2 merece un comentario. Que agregar la ubicación no mejore, cuando el análisis de confusiones sugiere que la ubicación es la información faltante, tiene al menos dos explicaciones posibles: que la posición de la muñeca en el encuadre no sea una buena medida de la ubicación respecto del cuerpo, o que las dos personas evaluadas fallen por la detección y no por la ubicación. Distinguir ambas requiere evaluar v2 con el LOSO completo y, eventualmente, una representación de la ubicación relativa al cuerpo.
 
@@ -231,4 +263,4 @@ Los resultados permiten extraer algunas conclusiones sobre el modelo y sobre el 
 
 ## 14.10 Síntesis
 
-El modelo alcanza una exactitud independiente del sujeto de 79,8 % ± 8,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo; el dropout más alto y el descarte aleatorio de cuadros muestran mejoras preliminares que deben confirmarse. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.
+El modelo alcanza una exactitud independiente del sujeto de 79,8 % ± 8,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo. En cambio, la regularización —dropout 0,4 y descarte aleatorio de cuadros— sí mejora: 81,7 % ± 7,9 % con el protocolo completo, subiendo el piso y bajando la dispersión, y es la configuración con la que se reentrenó el modelo servido. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.

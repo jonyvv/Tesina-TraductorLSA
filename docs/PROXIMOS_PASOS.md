@@ -216,7 +216,30 @@ La pérdida no está repartida pareja: `clase_40` conservó 16 de 50 muestras y 
 `min_hand_detection_confidence` en 0,4 y medir cuántas se recuperan. Hoy hay clases
 entrenando con un tercio de los datos.
 
-**2.5 Atacar el overfitting** · herramientas listas desde el 14/8
+**2.5 Atacar el overfitting** · ~~pendiente~~ **HECHO (18/10/2026): mejora confirmada**
+
+`--dropout 0.4 --aug-frame-drop 0.30` con el LOSO completo da **81,7 % ± 7,9 %** contra
+79,8 % ± 8,9 % del baseline. Reporte en `ml/reports/loso_do40_fd30.json` y comparación en
+`ml/reports/comparacion_regularizacion.json`.
+
+A diferencia de la grilla temporal, **no nivela para abajo**: el piso sube de 63,1 % a
+66,7 %, el techo de 89,5 % a 91,8 % y el desvío baja de 8,9 a 7,9. Los dos sujetos
+difíciles (S03 y S08) ganan 3,5 y 4,2 puntos, que era justamente el objetivo. Wilcoxon
+sobre los 10 sujetos da p = 0,13, pero McNemar sobre las 2862 predicciones da **p = 0,004**
+(200 aciertos exclusivos contra 146).
+
+**El modelo servido ya se reentrenó con esa configuración** (83,95 % en el split único,
+contra 81,25 % antes). Queda pendiente una decisión de los autores: si esta pasa a ser la
+configuración definitiva, el resultado principal de la tesina es 81,7 % ± 7,9 % y hay que
+actualizarlo en la sección 14.2, el resumen, las conclusiones y el anteproyecto, además de
+regenerar las figuras desde el reporte nuevo.
+
+Lo que sigue abajo es el detalle de cómo se llegó, que se mantiene porque explica el
+razonamiento.
+
+---
+
+_Contexto original (14/8/2026):_
 
 En el split único reproducible (`backend/models/modelo_lsa64_lstm.json`, semilla 42) el
 loss de entrenamiento cae de 2,55 a 0,12 mientras la accuracy de validación deja de
