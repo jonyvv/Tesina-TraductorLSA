@@ -31,6 +31,8 @@ lsa-traductor/
 │   ├── extract_features.py         # LSA64 etapa 1: landmarks -> cache .npz
 │   ├── train_lsa64.py              # LSA64 etapa 2: BiLSTM sobre el cache
 │   ├── evaluate_loso.py            # validación leave-one-subject-out
+│   ├── baseline_rf.py              # línea base Random Forest (mismo protocolo)
+│   ├── comparar_modelos.py         # comparación pareada entre dos reportes LOSO
 │   ├── lsa64/                      # implementación de LSA64 (cache, folds, fit)
 │   ├── tests/                      # tests de splits, cache y entrenamiento
 │   ├── reports/                    # matrices de confusión y reportes .json
@@ -179,6 +181,32 @@ servir. El modelo que se sirve sale de `ml/train_lsa64.py`.
 Última medición registrada (11/8/2026): **79,8 % ± 8,9 %** signer-independent.
 El análisis de ese número está en `docs/PROXIMOS_PASOS.md`.
 
+#### Línea base no neuronal (Random Forest)
+
+El planteo del proyecto promete comparar Random Forest contra una red neuronal.
+La comparación corre sobre el mismo caché y los mismos 10 folds que el LOSO de la
+BiLSTM, así que los números son comparables de igual a igual:
+
+```bash
+# Resume cada secuencia en media/desvío/mín/máx por feature (138 -> 552) y
+# entrena un bosque por fold. Tarda ~30 s.
+python ml/baseline_rf.py
+
+# Compara los dos reportes: diferencia por sujeto, Wilcoxon pareado y McNemar.
+python ml/comparar_modelos.py
+```
+
+Resultado (18/10/2026): **78,2 % ± 7,5 %** contra 79,8 % ± 8,9 % de la BiLSTM.
+Solo 1,6 puntos, aunque el resumen estadístico **descarta el orden temporal por
+construcción**. La ventaja de la red es detectable por muestra (McNemar p = 0,04)
+pero no por sujeto (Wilcoxon p = 0,20), y los dos modelos predicen lo mismo en el
+75,5 % de los casos. El análisis completo está en `docs/PROXIMOS_PASOS.md` y en la
+sección 14.7.1 de la tesina.
+
+El bosque se entrena con los mismos 8 sujetos que la red: el sujeto de validación
+queda afuera aunque el bosque no lo necesite, porque entrenarlo con 9 mediría el
+tamaño del conjunto y no el modelo. Con `--incluir-val` se puede ver esa variante.
+
 Esto deja `backend/models/modelo_lse.joblib` listo para que lo cargue el backend.
 
 Si vas a usar LSA64, el flujo recomendado es organizar los videos por clase o
@@ -284,6 +312,7 @@ y datos sintéticos.
 - [x] Etiquetado correcto de LSA64 (`CCC_SSS_RRR`) y split agrupado por sujeto, con chequeo de fuga.
 - [x] Entrenamiento completo sobre LSA64, validado con leave-one-subject-out (10 folds, accuracy por sujeto y por clase). Ver `docs/PROXIMOS_PASOS.md`.
 - [x] **Modelo dinámico (BiLSTM) servido en producción**: `ModeloLSE` delega en un adaptador según la extensión (`.joblib`/`.pt`) y `SesionTraduccion` acumula la ventana temporal por conexión.
+- [x] **Línea base no neuronal sobre LSA64** (`ml/baseline_rf.py`): Random Forest con el mismo protocolo LOSO, 78,2 % ± 7,5 % contra 79,8 % ± 8,9 % de la BiLSTM, con comparación pareada (`ml/comparar_modelos.py`).
 - [ ] **Dataset propio real.** Sigue pendiente para las señas estáticas: hace falta capturar cada seña en **al menos 2 sesiones distintas** (idealmente con más de un sujeto). Con una sola sesión por seña, el split agrupado deja clases enteras fuera del entrenamiento y las métricas no significan nada — `ml/train.py` ahora lo detecta y aborta con un mensaje explicando el problema.
 - [ ] Deploy efectivo en Render/Railway/GCP (la imagen está lista; falta publicarla y restringir CORS).
 - [ ] Validación de usabilidad con usuarios reales de LSA.

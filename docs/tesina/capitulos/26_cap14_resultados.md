@@ -145,7 +145,42 @@ La @tab:antecedentes del Capítulo 5 ubica el resultado propio respecto de la li
 
 ### 14.7.1 Línea base no neuronal
 
-Para justificar el uso de una red recurrente, es necesario compararla con un modelo más simple. La línea base prevista es un bosque aleatorio (sección 2.6) entrenado sobre un resumen de cada secuencia —media, desvío, mínimo y máximo de cada característica—, evaluado con el mismo protocolo LOSO. [[PENDIENTE (tarea M2 del plan): ejecutar la línea base y completar este apartado con su resultado. Si el bosque aleatorio obtiene un resultado cercano al de la BiLSTM, la conclusión es que el orden temporal aporta poco con esta representación, lo que también es un resultado relevante.]]
+Para justificar el uso de una red recurrente es necesario compararla con un modelo más simple. La línea base es un bosque aleatorio (sección 2.6) de 500 árboles entrenado sobre un resumen de cada secuencia —media, desvío, mínimo y máximo de cada característica, lo que convierte una secuencia de largo variable en un vector fijo de 552 valores—, evaluado con el mismo protocolo LOSO, sobre el mismo caché y con las mismas diez particiones. El bosque se entrena con las mismas ocho personas que la red: la persona de validación queda afuera aunque el bosque no la necesite, porque entrenarlo con nueve mediría el tamaño del conjunto y no el modelo.
+
+El resumen estadístico descarta el orden temporal por construcción: dos secuencias con los mismos cuadros en distinto orden producen el mismo vector. Esa es exactamente la propiedad que la comparación busca medir.
+
+Tabla: Comparación pareada entre la BiLSTM y la línea base de bosque aleatorio, por persona. {#tab:baseline}
+
+| Persona de prueba | BiLSTM | Bosque aleatorio | Diferencia |
+|---|---|---|---|
+| S01 | 86,4 % | 85,7 % | +0,7 |
+| S02 | 75,5 % | 77,8 % | −2,3 |
+| S03 | 63,1 % | 63,1 % | 0,0 |
+| S04 | 82,2 % | 81,1 % | +1,0 |
+| S05 | 87,1 % | 82,8 % | +4,3 |
+| S06 | 80,7 % | 74,0 % | +6,8 |
+| S07 | 89,5 % | 86,8 % | +2,6 |
+| S08 | 66,3 % | 72,4 % | −6,1 |
+| S09 | 85,5 % | 84,5 % | +1,0 |
+| S10 | 81,8 % | 73,7 % | +8,2 |
+| **Media ± desvío** | **79,8 % ± 8,9 %** | **78,2 % ± 7,5 %** | **+1,6** |
+
+![Exactitud por persona de la BiLSTM y de la línea base de bosque aleatorio (izquierda) y diferencia entre ambas (derecha). En naranja, las dos personas en que el bosque supera a la red.](figuras/fig_baseline_rf.png){ancho=15 #fig:baseline}
+
+**La diferencia es de 1,6 puntos** (@fig:baseline). La BiLSTM gana en siete de las diez personas, el bosque en dos y empatan en una. Como ambos modelos se evaluaron sobre las mismas particiones y las mismas 2862 secuencias, la comparación correcta es pareada, y se informan dos pruebas que responden preguntas distintas:
+
+- **Wilcoxon pareado sobre las diez personas**: $p = 0{,}20$. A nivel de persona, la diferencia no es consistente: con diez observaciones y una dispersión de ±4,2 puntos entre ellas, no puede descartarse el azar.
+- **McNemar sobre las 2862 predicciones agrupadas**: $p = 0{,}04$. Los dos modelos aciertan juntos en 2021 secuencias y fallan juntos en 353; de las 488 en que difieren, la BiLSTM acierta 267 y el bosque 221. A nivel de muestra, con mucho más poder estadístico, la ventaja de la red es detectable, pero pequeña.
+
+Los dos modelos producen **la misma predicción en el 75,5 % de las secuencias**. Por clase, la BiLSTM es mejor en 33, el bosque en 23 y empatan en 8.
+
+**Interpretación.** Con esta representación, el orden temporal aporta poco. Un modelo tabular que sólo conoce la distribución de cada característica a lo largo de la seña —sin saber en qué orden ocurrieron los cuadros— alcanza el 97,9 % del desempeño de la red recurrente. Esto no invalida la elección de la BiLSTM, pero obliga a matizarla: la mayor parte de la información discriminante de LSA64, tal como la representa este sistema, está en *qué configuraciones de mano aparecen y en qué rango se mueven*, no en *en qué orden*.
+
+Hay un patrón en las clases donde cada modelo gana que refuerza esa lectura. La BiLSTM aventaja al bosque sobre todo en Apagar (+40 puntos), Aceptar (+31), Atrapar (+24), Cumpleaños (+19) y Aparecer (+18): señas cuyo significado está en la trayectoria. El bosque gana en Comida (+37), Espumadera (+22), Fideos (+18), Agradecer (+14) y Asado (+14), más próximas a una configuración sostenida. [[PENDIENTE (tarea M4 del plan): verificar esta lectura mirando los videos de esas diez señas; si se confirma, es el argumento más directo para explicar qué aporta la componente temporal y en qué casos.]]
+
+La consecuencia práctica es que **el margen de mejora no está en hacer la red más grande**. Si una representación que ignora el tiempo llega a 78,2 %, el techo de este enfoque lo pone la calidad de las características —la detección de las manos (sección 14.5) y la ubicación descartada por la normalización (sección 9.6)—, no la capacidad del clasificador.
+
+El experimento se reproduce con `python ml/baseline_rf.py` y la comparación con `python ml/comparar_modelos.py`; los reportes quedan en `ml/reports/baseline_rf_loso.json` y `ml/reports/comparacion_bilstm_rf.json`.
 
 ## 14.8 Desempeño en tiempo real
 
@@ -173,8 +208,10 @@ Los resultados permiten extraer algunas conclusiones sobre el modelo y sobre el 
 
 **La ubicación es la información faltante más plausible.** Las confusiones apuntan a señas que difieren en la ubicación, y la representación v1 descarta ese parámetro por diseño. La primera prueba de agregarlo no dio resultado, pero la prueba fue parcial y la representación de la ubicación, mejorable.
 
+**El orden temporal aporta menos de lo esperado.** La línea base de bosque aleatorio, que descarta el tiempo por construcción, queda a 1,6 puntos de la BiLSTM (sección 14.7.1). La ventaja de la red es estadísticamente detectable a nivel de muestra pero no a nivel de persona, y ambos modelos coinciden en tres de cada cuatro predicciones. El resultado reorienta dónde buscar mejoras: en las características, no en el clasificador.
+
 **Los resultados negativos también son resultados.** La hipótesis de la grilla temporal era razonable y resultó falsa. Haberla evaluado con un protocolo riguroso evitó adoptar un cambio que empeoraba el modelo en 3,3 puntos, y dejó documentado por qué no conviene volver a proponerlo en su forma simple.
 
 ## 14.10 Síntesis
 
-El modelo alcanza una exactitud independiente del sujeto de 79,8 % ± 8,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Las confusiones se concentran en señas que comparten configuración. Preservar la grilla temporal con ceros empeora el modelo; el dropout más alto y el descarte aleatorio de cuadros muestran mejoras preliminares que deben confirmarse. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.
+El modelo alcanza una exactitud independiente del sujeto de 79,8 % ± 8,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo; el dropout más alto y el descarte aleatorio de cuadros muestran mejoras preliminares que deben confirmarse. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.

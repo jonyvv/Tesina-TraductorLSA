@@ -139,6 +139,44 @@ def fig_filtrado_vs_grilla() -> None:
     guardar(fig, "fig_filtrado_vs_grilla.png")
 
 
+def fig_baseline_rf() -> None:
+    """BiLSTM contra la linea base de bosque aleatorio, persona por persona.
+
+    Se grafica pareado porque los dos modelos se evaluaron sobre las mismas
+    particiones: lo que importa no es si los rangos se solapan, sino si la red
+    le gana al bosque en cada persona.
+    """
+    comp = cargar("comparacion_bilstm_rf.json")
+    sujetos = sorted(comp["por_sujeto"])
+    bilstm = [comp["por_sujeto"][s]["BiLSTM"] * 100 for s in sujetos]
+    bosque = [comp["por_sujeto"][s]["RandomForest"] * 100 for s in sujetos]
+    idx = np.arange(len(sujetos))
+
+    fig, (ax, ax2) = plt.subplots(
+        1, 2, figsize=(9.4, 3.6), gridspec_kw={"width_ratios": [2.6, 1]}
+    )
+
+    ax.bar(idx - 0.2, bilstm, 0.4, color=AZUL, label=f"BiLSTM ({comp['media_a'] * 100:.1f} %)")
+    ax.bar(idx + 0.2, bosque, 0.4, color=NARANJA, label=f"Bosque aleatorio ({comp['media_b'] * 100:.1f} %)")
+    ax.set_xticks(idx, [s.replace("sujeto_", "S") for s in sujetos])
+    ax.set_ylim(50, 100)
+    ax.set_ylabel("Exactitud (%)")
+    ax.set_xlabel("Persona dejada afuera (partición LOSO)")
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncols=2, frameon=False, fontsize=8)
+
+    # Diferencia por persona: deja ver que la ventaja no es consistente.
+    dif = [comp["por_sujeto"][s]["diferencia"] * 100 for s in sujetos]
+    colores = [AZUL if d >= 0 else NARANJA for d in dif]
+    ax2.barh(idx, dif, color=colores)
+    ax2.axvline(0, color=GRIS, lw=0.8)
+    ax2.set_yticks(idx, [s.replace("sujeto_", "S") for s in sujetos], fontsize=8)
+    ax2.invert_yaxis()
+    ax2.set_xlabel("Diferencia (pp)", fontsize=9)
+    ax2.set_title("BiLSTM − bosque", fontsize=9, color=GRIS)
+
+    guardar(fig, "fig_baseline_rf.png")
+
+
 def fig_curva_entrenamiento() -> None:
     meta = json.loads((RAIZ / "backend" / "models" / "modelo_lsa64_lstm.json").read_text(encoding="utf-8"))
     hist = meta["history"]
@@ -509,6 +547,7 @@ def main() -> None:
     fig_loso_por_sujeto()
     fig_retencion_vs_accuracy()
     fig_filtrado_vs_grilla()
+    fig_baseline_rf()
     fig_curva_entrenamiento()
     fig_accuracy_por_clase()
     pares = fig_matriz_confusion()

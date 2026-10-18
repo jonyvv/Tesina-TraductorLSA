@@ -1,6 +1,6 @@
 # Próximos pasos y ajustes al anteproyecto
 
-_Actualizado: 14 de agosto de 2026 — después de probar y descartar la hipótesis de la grilla temporal._
+_Actualizado: 18 de octubre de 2026 — después de correr la línea base Random Forest (M2) y compararla con la BiLSTM._
 
 ---
 
@@ -12,10 +12,51 @@ _Actualizado: 14 de agosto de 2026 — después de probar y descartar la hipóte
 (leave-one-subject-out, 10 folds, 64 clases, 2862 secuencias)
 
 Reporte completo en `ml/reports/loso_lsa64.json`, incluidas las predicciones de los
-10 folds agrupadas. Está dentro del rango publicado para LSA64 en régimen
-signer-independent (74,2 % a ~91,7 % de media según el método); los valores de 99 % que
-suelen citarse corresponden a protocolos *signer-dependent* o con fusión de
-características. Ver §3.1.
+10 folds agrupadas. Los valores de 99 % que suelen citarse corresponden a protocolos
+*signer-dependent* o con fusión de características. Ver §3.1.
+
+> **Corrección (1/10/2026, Leandro).** La versión anterior de este documento decía que
+> el rango publicado signer-independent iba de "74,2 % a ~91,7 %". Es incorrecto:
+> Akdag y Baykan (2024, *Electronics*) reportan **98,53 % signer-independent** sobre
+> LSA64 con una 3D-CNN sobre video RGB. El 79,8 % supera el 74,22 % de Marais et al.
+> (2022) pero queda lejos de ese techo. La diferencia se justifica por el enfoque
+> (modelo liviano sobre landmarks, viable en capa gratuita, contra una 3D-CNN que
+> necesita GPU), no por el protocolo. No volver a citar el rango viejo.
+
+### Línea base no neuronal: el orden temporal aporta poco
+
+**Random Forest sobre el mismo caché y los mismos folds: 78,2 % ± 7,5 %**, a solo
+**1,6 puntos** de la BiLSTM. Reportes en `ml/reports/baseline_rf_loso.json` y
+`ml/reports/comparacion_bilstm_rf.json`.
+
+El bosque recibe cada secuencia resumida en media/desvío/mín/máx por feature (552
+valores), lo que **descarta el orden temporal por construcción**. Que llegue al 97,9 %
+del desempeño de la red es el hallazgo:
+
+| | BiLSTM | Random Forest |
+|---|---|---|
+| Media ± desvío | 79,8 % ± 8,9 % | 78,2 % ± 7,5 % |
+| Gana en | 7 sujetos | 2 sujetos (empatan en 1) |
+| Clases en que gana | 33 | 23 (empatan 8) |
+
+Las dos pruebas pareadas no dicen lo mismo, y conviene citar las dos:
+
+- **Wilcoxon sobre los 10 sujetos: p = 0,20.** A nivel de persona la ventaja no es
+  consistente (la diferencia por sujeto va de −6,1 a +8,2 puntos).
+- **McNemar sobre las 2862 predicciones: p = 0,04.** A nivel de muestra sí se detecta:
+  de las 488 secuencias en que difieren, la red acierta 267 y el bosque 221. Los dos
+  modelos predicen lo mismo en el 75,5 % de los casos.
+
+**Dónde gana cada uno.** La BiLSTM aventaja al bosque en Apagar (+40), Aceptar (+31),
+Atrapar (+24), Cumpleaños (+19) y Aparecer (+18) — señas cuyo significado está en la
+trayectoria. El bosque gana en Comida (+37), Espumadera (+22), Fideos (+18),
+Agradecer (+14) y Asado (+14), más cercanas a una configuración sostenida. Falta
+verificarlo contra los videos (tarea M4).
+
+**Consecuencia para el trabajo que queda:** el margen no está en agrandar la red. Si una
+representación que ignora el tiempo llega a 78,2 %, el techo lo ponen las features —la
+detección de manos (M3) y la ubicación que la normalización descarta—, no el
+clasificador.
 
 | Sujeto de test | Accuracy | | Sujeto de test | Accuracy |
 |---|---|---|---|---|
@@ -143,12 +184,12 @@ confusión sistemática con otra seña. Hace falta la matriz para ver contra cu�
 detectar si los errores se concentran en las 22 señas bimanuales. Además es material
 directo para el análisis cualitativo del capítulo de resultados.
 
-**2.3 Baseline no neuronal (Random Forest)** · ~30 min
+**2.3 Baseline no neuronal (Random Forest)** · ~~pendiente~~ **HECHO (18/10/2026)**
 
-El README y el planteo del proyecto prometen la comparación explícita Random Forest vs.
-red neuronal. Se puede correr sobre el mismo caché con features agregadas
-(media/desvío/mín/máx por secuencia). Sin baseline, no hay forma de justificar que la
-BiLSTM aporta algo.
+Corrido con `python ml/baseline_rf.py` y comparado con `python ml/comparar_modelos.py`.
+Resultado y análisis pareado en §1 ("Línea base no neuronal"). Resumen: 78,2 % ± 7,5 %
+contra 79,8 % ± 8,9 % de la BiLSTM; la ventaja de la red es detectable por muestra
+(McNemar p = 0,04) pero no por sujeto (Wilcoxon p = 0,20).
 
 ### Prioridad media — mejoran el resultado
 
@@ -246,6 +287,12 @@ Tres salidas posibles, hay que elegir una y dejarla escrita:
 Sea cual sea, **el anteproyecto no puede quedar prometiendo "el abecedario" sin
 especificar la fuente de datos.**
 
+> **DECIDIDO (18/10/2026, Jonatan): opción 3.** El abecedario sale del alcance y la
+> tesina se concentra en las 64 señas de palabras de LSA64. Ya está aplicado en
+> `anteproyecto-v2.docx` (Alcances, Limitaciones, Resultados esperados y Anexo E).
+> **Falta hablarlo con el tutor**, porque cambia un alcance comprometido en el
+> anteproyecto original — es la condición que puso el propio plan de la tesina (D1).
+
 **b) La comparación con el 99,4 % de Mindlin necesita contexto.**
 
 El anteproyecto cita ese número como antecedente. Si el trabajo de ustedes reporta 86 %,
@@ -255,8 +302,15 @@ train y test) o usar fusión de características. En régimen *signer-independen
 literatura va de 74,2 % a ~91,7 % de media.
 
 Hay que: (i) verificar en la tesis de Mindlin qué protocolo usó y decirlo explícitamente
-al citarla, y (ii) declarar el protocolo propio en Resultados esperados. Un 86 %
+al citarla, y (ii) declarar el protocolo propio en Resultados esperados. Un 79,8 %
 signer-independent bien explicado vale más que un 99 % sin protocolo.
+
+**Verificado (1/10/2026, Leandro):** Mindlin usó 5-fold con videos al azar y él mismo
+escribe que "esta separación no es independiente del sujeto". Confirmado: no es
+comparable. Está explicado en la sección 5.3.1 de la tesina. El antecedente que sí es
+comparable en protocolo es Marais et al. (2022), 74,22 % signer-independent, que el
+79,8 % supera; y el techo actual es Akdag y Baykan (2024) con 98,53 % usando 3D-CNN
+sobre video RGB.
 
 **c) Falta un objetivo específico de evaluación.**
 
