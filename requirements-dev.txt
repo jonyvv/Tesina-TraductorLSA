@@ -5,4 +5,8 @@
 -r backend/requirements.txt
 
 pytest>=8.0.0
-httpx2>=0.28.0   # requerido por starlette.testclient para probar el backend
+# starlette.testclient, que usan los tests de punta a punta del backend.
+# Sirve httpx2 (el que recomienda starlette hoy) o httpx (anda, pero avisa que
+# esta deprecado). tests/test_backend_e2e.py acepta cualquiera de los dos: con
+# ninguno instalado esos nueve tests se saltean, y conviene que eso se note.
+httpx2>=0.28.0

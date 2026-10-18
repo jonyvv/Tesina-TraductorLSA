@@ -9,6 +9,7 @@ nuevo no falla por esto.
 """
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -21,7 +22,13 @@ sys.path.append(str(RAIZ))
 
 from common.features import DEFAULT_MODEL_PATH  # noqa: E402
 
-pytest.importorskip("httpx2", reason="starlette.testclient necesita httpx2")
+# starlette.testclient necesita httpx2 (el recomendado hoy) o httpx (que sigue
+# andando, con un DeprecationWarning). Se acepta cualquiera de los dos a
+# proposito: pidiendo solo httpx2, en una maquina que tiene httpx estos nueve
+# tests se salteaban en silencio y nadie se enteraba de que el backend no se
+# estaba probando de punta a punta.
+if not any(importlib.util.find_spec(p) for p in ("httpx2", "httpx")):
+    pytest.skip("starlette.testclient necesita httpx2 o httpx", allow_module_level=True)
 
 requiere_mediapipe = pytest.mark.skipif(
     not DEFAULT_MODEL_PATH.exists(),
