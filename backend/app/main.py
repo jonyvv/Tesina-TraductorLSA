@@ -47,6 +47,25 @@ RUTA_MODELO = Path(
 )
 UMBRAL_CONFIANZA = 0.6
 
+
+def origenes_permitidos(valor: str | None) -> list[str]:
+    """Orígenes que acepta CORS, a partir de `LSA_CORS_ORIGINS`.
+
+    Sin la variable (desarrollo local) se acepta cualquier origen. En el deploy
+    hay que fijarla al dominio real, separando varios con coma:
+        LSA_CORS_ORIGINS=https://traductor-lsa.onrender.com
+    Se configura por entorno y no en el código porque el dominio no se conoce
+    hasta crear el servicio, y cambiarlo no debería requerir un commit.
+
+    Nota: cuando el frontend lo sirve este mismo backend (el caso del
+    Dockerfile), el navegador no hace pedidos cross-origin y CORS no interviene;
+    la restricción importa si alguien sirve el frontend desde otro dominio o
+    para que otro sitio no pueda usar la API.
+    """
+    if not valor or not valor.strip():
+        return ["*"]
+    return [origen.strip().rstrip("/") for origen in valor.split(",") if origen.strip()]
+
 # --- Construcción de dependencias (equivalente al "carga modelo" del diagrama) ---
 # Nota: tanto `Preprocesador` (requiere el archivo hand_landmarker.task, ver
 # common/download_model.py) como `ModeloLSE` (requiere el .joblib entrenado)
@@ -102,11 +121,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Traductor LSA API", version="0.1.0", lifespan=lifespan)
 
-# En desarrollo, permitir cualquier origen. En producción, restringir al dominio
-# real del frontend (ver docs/ARQUITECTURA.md, sección Deploy).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origenes_permitidos(os.getenv("LSA_CORS_ORIGINS")),
     allow_methods=["*"],
     allow_headers=["*"],
 )
