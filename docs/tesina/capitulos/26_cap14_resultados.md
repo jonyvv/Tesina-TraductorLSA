@@ -176,7 +176,7 @@ Los dos modelos producen **la misma predicción en el 75,5 % de las secuencias**
 
 **Interpretación.** Con esta representación, el orden temporal aporta poco. Un modelo tabular que sólo conoce la distribución de cada característica a lo largo de la seña —sin saber en qué orden ocurrieron los cuadros— alcanza el 97,9 % del desempeño de la red recurrente. Esto no invalida la elección de la BiLSTM, pero obliga a matizarla: la mayor parte de la información discriminante de LSA64, tal como la representa este sistema, está en *qué configuraciones de mano aparecen y en qué rango se mueven*, no en *en qué orden*.
 
-#### Una explicación intuitiva que la medición no sostiene
+### 14.7.2 Una explicación intuitiva que la medición no sostiene
 
 Mirando las clases donde cada modelo gana aparece un patrón aparente. La BiLSTM aventaja al bosque sobre todo en Apagar (+40 puntos), Aceptar (+31), Atrapar (+24), Cumpleaños (+19) y Aparecer (+18), que se leen como señas de trayectoria; el bosque gana en Comida (+37), Espumadera (+22), Fideos (+18), Agradecer (+14) y Asado (+14), más próximas a una configuración sostenida. La explicación se ofrece sola: el bosque pierde donde el recorrido *es* el significado.
 
