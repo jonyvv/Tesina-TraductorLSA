@@ -1,0 +1,105 @@
+{
+  "modelo_a": "BiLSTM",
+  "modelo_b": "RandomForest",
+  "media_a": 0.7981172769721461,
+  "media_b": 0.782005524203788,
+  "desvio_a": 0.08900661797258351,
+  "desvio_b": 0.07450251544624487,
+  "diferencia_media": 0.01611175276835808,
+  "por_sujeto": {
+    "sujeto_01": {
+      "BiLSTM": 0.8636,
+      "RandomForest": 0.8566,
+      "diferencia": 0.007
+    },
+    "sujeto_02": {
+      "BiLSTM": 0.7549,
+      "RandomForest": 0.7778,
+      "diferencia": -0.0229
+    },
+    "sujeto_03": {
+      "BiLSTM": 0.6312,
+      "RandomForest": 0.6312,
+      "diferencia": 0.0
+    },
+    "sujeto_04": {
+      "BiLSTM": 0.8215,
+      "RandomForest": 0.8114,
+      "diferencia": 0.0101
+    },
+    "sujeto_05": {
+      "BiLSTM": 0.8711,
+      "RandomForest": 0.8281,
+      "diferencia": 0.043
+    },
+    "sujeto_06": {
+      "BiLSTM": 0.8074,
+      "RandomForest": 0.7399,
+      "diferencia": 0.0676
+    },
+    "sujeto_07": {
+      "BiLSTM": 0.8947,
+      "RandomForest": 0.8684,
+      "diferencia": 0.0263
+    },
+    "sujeto_08": {
+      "BiLSTM": 0.6628,
+      "RandomForest": 0.7241,
+      "diferencia": -0.0613
+    },
+    "sujeto_09": {
+      "BiLSTM": 0.8553,
+      "RandomForest": 0.8454,
+      "diferencia": 0.0099
+    },
+    "sujeto_10": {
+      "BiLSTM": 0.8185,
+      "RandomForest": 0.737,
+      "diferencia": 0.0815
+    }
+  },
+  "sujetos_gana_a": 7,
+  "sujetos_gana_b": 2,
+  "diferencia_media_pareada": 0.016111752768358068,
+  "diferencia_desvio_pareada": 0.041736204107096136,
+  "wilcoxon": {
+    "estadistico": 11.0,
+    "p_valor": 0.203125,
+    "n": 10
+  },
+  "mcnemar": {
+    "aciertan_ambos": 2021,
+    "falla_ambos": 353,
+    "acierta_solo_BiLSTM": 267,
+    "acierta_solo_RandomForest": 221,
+    "n_discordantes": 488,
+    "p_valor": 0.041534674651802064,
+    "predicciones_identicas": 2160,
+    "proporcion_predicciones_identicas": 0.7547
+  },
+  "clases_donde_gana_a": {
+    "clase_52": 0.4,
+    "clase_50": 0.3125,
+    "clase_55": 0.24,
+    "clase_30": 0.1875,
+    "clase_53": 0.1795,
+    "clase_14": 0.1786,
+    "clase_60": 0.175,
+    "clase_47": 0.14
+  },
+  "clases_donde_gana_b": {
+    "clase_23": -0.3659,
+    "clase_18": -0.22,
+    "clase_48": -0.18,
+    "clase_51": -0.1428,
+    "clase_45": -0.14,
+    "clase_05": -0.12,
+    "clase_46": -0.1087,
+    "clase_04": -0.1
+  },
+  "n_clases_gana_a": 33,
+  "n_clases_gana_b": 23,
+  "n_clases_empate": 8,
+  "reporte_a": "C:\\Users\\joniv\\Documents\\facultad\\Quinto\\tesis\\lsa-traductor\\lsa-traductor\\ml\\reports\\loso_lsa64.json",
+  "reporte_b": "C:\\Users\\joniv\\Documents\\facultad\\Quinto\\tesis\\lsa-traductor\\lsa-traductor\\ml\\reports\\baseline_rf_loso.json"
+}
