@@ -169,8 +169,8 @@ Tabla: Comparación pareada entre la BiLSTM y la línea base de bosque aleatorio
 
 **La diferencia es de 1,6 puntos** (@fig:baseline). La BiLSTM gana en siete de las diez personas, el bosque en dos y empatan en una. Como ambos modelos se evaluaron sobre las mismas particiones y las mismas 2862 secuencias, la comparación correcta es pareada, y se informan dos pruebas que responden preguntas distintas:
 
-- **Wilcoxon pareado sobre las diez personas**: $p = 0{,}20$. A nivel de persona, la diferencia no es consistente: con diez observaciones y una dispersión de ±4,2 puntos entre ellas, no puede descartarse el azar.
-- **McNemar sobre las 2862 predicciones agrupadas**: $p = 0{,}04$. Los dos modelos aciertan juntos en 2021 secuencias y fallan juntos en 353; de las 488 en que difieren, la BiLSTM acierta 267 y el bosque 221. A nivel de muestra, con mucho más poder estadístico, la ventaja de la red es detectable, pero pequeña.
+- **Wilcoxon pareado sobre las diez personas**: p = 0,20. A nivel de persona, la diferencia no es consistente: con diez observaciones y una dispersión de ±4,2 puntos entre ellas, no puede descartarse el azar.
+- **McNemar sobre las 2862 predicciones agrupadas**: p = 0,04. Los dos modelos aciertan juntos en 2021 secuencias y fallan juntos en 353; de las 488 en que difieren, la BiLSTM acierta 267 y el bosque 221. A nivel de muestra, con mucho más poder estadístico, la ventaja de la red es detectable, pero pequeña.
 
 Los dos modelos producen **la misma predicción en el 75,5 % de las secuencias**. Por clase, la BiLSTM es mejor en 33, el bosque en 23 y empatan en 8.
 
@@ -182,10 +182,10 @@ Mirando las clases donde cada modelo gana aparece un patrón aparente. La BiLSTM
 
 Esa lectura es falsa, o al menos no se puede sostener con los datos. Para comprobarla se midió, sobre las mismas 2862 secuencias, cuánto se mueve cada seña, y se correlacionó con la ventaja de la red clase por clase. Se usaron dos definiciones de movimiento, porque el desplazamiento no lo es todo:
 
-- **Recorrido de la muñeca**: la suma de los desplazamientos entre cuadros consecutivos, tomada de la representación v2, que es la única que conserva dónde está la mano (sección 9.6). Correlación con la ventaja de la BiLSTM: $r = -0{,}21$ ($p = 0{,}10$).
-- **Cambio de configuración**: el cambio medio entre cuadros consecutivos del bloque de landmarks normalizados, es decir cuánto se deforma la mano aunque no se traslade. Correlación: $r = -0{,}14$ ($p = 0{,}27$).
+- **Recorrido de la muñeca**: la suma de los desplazamientos entre cuadros consecutivos, tomada de la representación v2, que es la única que conserva dónde está la mano (sección 9.6). Correlación con la ventaja de la BiLSTM: r = -0,21 (p = 0,10).
+- **Cambio de configuración**: el cambio medio entre cuadros consecutivos del bloque de landmarks normalizados, es decir cuánto se deforma la mano aunque no se traslade. Correlación: r = -0,14 (p = 0,27).
 
-Ninguna de las dos es significativa, y las dos apuntan en la dirección **contraria** a la esperada. Separando las clases en tercios por recorrido, el tercio que más se mueve muestra una ventaja media de −1,6 puntos para la red y el que menos se mueve, de +3,2 (Mann-Whitney en la dirección de la hipótesis: $p = 0{,}94$).
+Ninguna de las dos es significativa, y las dos apuntan en la dirección **contraria** a la esperada. Separando las clases en tercios por recorrido, el tercio que más se mueve muestra una ventaja media de −1,6 puntos para la red y el que menos se mueve, de +3,2 (Mann-Whitney en la dirección de la hipótesis: p = 0,94).
 
 La conclusión es que las diez señas citadas más arriba son los extremos de una distribución ruidosa, y que la narrativa de "trayectoria contra configuración" se construyó sobre ellas después de verlas. La pequeña ventaja de la BiLSTM existe, pero **no se explica por cuánto se mueve la seña**: queda sin explicar, que es un estado más honesto que una explicación plausible sin respaldo.
 
