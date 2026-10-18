@@ -47,11 +47,27 @@ Las dos pruebas pareadas no dicen lo mismo, y conviene citar las dos:
   de las 488 secuencias en que difieren, la red acierta 267 y el bosque 221. Los dos
   modelos predicen lo mismo en el 75,5 % de los casos.
 
-**Dónde gana cada uno.** La BiLSTM aventaja al bosque en Apagar (+40), Aceptar (+31),
-Atrapar (+24), Cumpleaños (+19) y Aparecer (+18) — señas cuyo significado está en la
-trayectoria. El bosque gana en Comida (+37), Espumadera (+22), Fideos (+18),
-Agradecer (+14) y Asado (+14), más cercanas a una configuración sostenida. Falta
-verificarlo contra los videos (tarea M4).
+**Dónde gana cada uno, y una hipótesis descartada.** La BiLSTM aventaja al bosque en
+Apagar (+40), Aceptar (+31), Atrapar (+24), Cumpleaños (+19) y Aparecer (+18); el bosque
+gana en Comida (+37), Espumadera (+22), Fideos (+18), Agradecer (+14) y Asado (+14).
+Leídas juntas sugieren que la red gana en las señas de trayectoria y pierde en las de
+configuración sostenida.
+
+**Se midió y es falso.** `python ml/analizar_movimiento.py` correlaciona, sobre las 64
+clases, la ventaja de la red contra dos definiciones de movimiento tomadas del caché v2
+(el único que conserva la posición de la mano):
+
+| Métrica | Correlación con la ventaja de la BiLSTM |
+|---|---|
+| Recorrido de la muñeca | r = −0,21 (p = 0,10) |
+| Cambio de configuración de la mano | r = −0,14 (p = 0,27) |
+
+Ninguna es significativa y las dos van en la dirección contraria: el tercio de señas que
+más se mueve da una ventaja media de −1,6 pp para la red, y el tercio que menos se mueve,
++3,2 pp. Las diez señas de arriba son los extremos de una distribución ruidosa y la
+explicación se armó después de mirarlas. **La ventaja de la BiLSTM existe pero no está
+explicada**, y conviene decirlo así en la defensa en vez de ofrecer una causa plausible
+sin respaldo. Reporte en `ml/reports/movimiento_por_clase.json`.
 
 **Consecuencia para el trabajo que queda:** el margen no está en agrandar la red. Si una
 representación que ignora el tiempo llega a 78,2 %, el techo lo ponen las features —la

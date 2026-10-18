@@ -176,7 +176,22 @@ Los dos modelos producen **la misma predicción en el 75,5 % de las secuencias**
 
 **Interpretación.** Con esta representación, el orden temporal aporta poco. Un modelo tabular que sólo conoce la distribución de cada característica a lo largo de la seña —sin saber en qué orden ocurrieron los cuadros— alcanza el 97,9 % del desempeño de la red recurrente. Esto no invalida la elección de la BiLSTM, pero obliga a matizarla: la mayor parte de la información discriminante de LSA64, tal como la representa este sistema, está en *qué configuraciones de mano aparecen y en qué rango se mueven*, no en *en qué orden*.
 
-Hay un patrón en las clases donde cada modelo gana que refuerza esa lectura. La BiLSTM aventaja al bosque sobre todo en Apagar (+40 puntos), Aceptar (+31), Atrapar (+24), Cumpleaños (+19) y Aparecer (+18): señas cuyo significado está en la trayectoria. El bosque gana en Comida (+37), Espumadera (+22), Fideos (+18), Agradecer (+14) y Asado (+14), más próximas a una configuración sostenida. [[PENDIENTE (tarea M4 del plan): verificar esta lectura mirando los videos de esas diez señas; si se confirma, es el argumento más directo para explicar qué aporta la componente temporal y en qué casos.]]
+#### Una explicación intuitiva que la medición no sostiene
+
+Mirando las clases donde cada modelo gana aparece un patrón aparente. La BiLSTM aventaja al bosque sobre todo en Apagar (+40 puntos), Aceptar (+31), Atrapar (+24), Cumpleaños (+19) y Aparecer (+18), que se leen como señas de trayectoria; el bosque gana en Comida (+37), Espumadera (+22), Fideos (+18), Agradecer (+14) y Asado (+14), más próximas a una configuración sostenida. La explicación se ofrece sola: el bosque pierde donde el recorrido *es* el significado.
+
+Esa lectura es falsa, o al menos no se puede sostener con los datos. Para comprobarla se midió, sobre las mismas 2862 secuencias, cuánto se mueve cada seña, y se correlacionó con la ventaja de la red clase por clase. Se usaron dos definiciones de movimiento, porque el desplazamiento no lo es todo:
+
+- **Recorrido de la muñeca**: la suma de los desplazamientos entre cuadros consecutivos, tomada de la representación v2, que es la única que conserva dónde está la mano (sección 9.6). Correlación con la ventaja de la BiLSTM: $r = -0{,}21$ ($p = 0{,}10$).
+- **Cambio de configuración**: el cambio medio entre cuadros consecutivos del bloque de landmarks normalizados, es decir cuánto se deforma la mano aunque no se traslade. Correlación: $r = -0{,}14$ ($p = 0{,}27$).
+
+Ninguna de las dos es significativa, y las dos apuntan en la dirección **contraria** a la esperada. Separando las clases en tercios por recorrido, el tercio que más se mueve muestra una ventaja media de −1,6 puntos para la red y el que menos se mueve, de +3,2 (Mann-Whitney en la dirección de la hipótesis: $p = 0{,}94$).
+
+La conclusión es que las diez señas citadas más arriba son los extremos de una distribución ruidosa, y que la narrativa de "trayectoria contra configuración" se construyó sobre ellas después de verlas. La pequeña ventaja de la BiLSTM existe, pero **no se explica por cuánto se mueve la seña**: queda sin explicar, que es un estado más honesto que una explicación plausible sin respaldo.
+
+Vale aclarar una limitación de la medición: el recorrido está en coordenadas del encuadre y no del cuerpo, y proviene de un caché distinto (v2) del que entrenó a los modelos (v1). Sobre el mismo dataset y las mismas clases alcanza para ordenar las señas de menos a más movimiento, que es lo que la correlación necesita, pero no es una medida fonológica de movimiento. El análisis se reproduce con `python ml/analizar_movimiento.py` y el reporte queda en `ml/reports/movimiento_por_clase.json`.
+
+[[PENDIENTE (tarea M4 del plan): mirar los videos de los pares más confundidos sigue siendo útil, pero ya no para confirmar esta hipótesis —que quedó descartada— sino para describir en qué se parecen las señas que el sistema confunde.]]
 
 La consecuencia práctica es que **el margen de mejora no está en hacer la red más grande**. Si una representación que ignora el tiempo llega a 78,2 %, el techo de este enfoque lo pone la calidad de las características —la detección de las manos (sección 14.5) y la ubicación descartada por la normalización (sección 9.6)—, no la capacidad del clasificador.
 
@@ -208,7 +223,9 @@ Los resultados permiten extraer algunas conclusiones sobre el modelo y sobre el 
 
 **La ubicación es la información faltante más plausible.** Las confusiones apuntan a señas que difieren en la ubicación, y la representación v1 descarta ese parámetro por diseño. La primera prueba de agregarlo no dio resultado, pero la prueba fue parcial y la representación de la ubicación, mejorable.
 
-**El orden temporal aporta menos de lo esperado.** La línea base de bosque aleatorio, que descarta el tiempo por construcción, queda a 1,6 puntos de la BiLSTM (sección 14.7.1). La ventaja de la red es estadísticamente detectable a nivel de muestra pero no a nivel de persona, y ambos modelos coinciden en tres de cada cuatro predicciones. El resultado reorienta dónde buscar mejoras: en las características, no en el clasificador.
+**El orden temporal aporta menos de lo esperado.** La línea base de bosque aleatorio, que descarta el tiempo por construcción, queda a 1,6 puntos de la BiLSTM (sección 14.7.1). La ventaja de la red es estadísticamente detectable a nivel de muestra pero no a nivel de persona, y ambos modelos coinciden en tres de cada cuatro predicciones. El resultado reorienta dónde buscar mejoras: en las características, no en el clasificador. Tampoco se encontró en qué tipo de seña se concentra esa ventaja: ni el desplazamiento de la mano ni el cambio de configuración la explican.
+
+**Conviene medir las explicaciones, no sólo los resultados.** La lectura intuitiva de por qué la red le gana al bosque —las señas de trayectoria— encajaba con los ejemplos y resultó no tener respaldo al medirla sobre las 64 clases. Es la misma clase de error que la hipótesis de la grilla temporal, y en los dos casos lo que lo evitó fue convertir la intuición en un número.
 
 **Los resultados negativos también son resultados.** La hipótesis de la grilla temporal era razonable y resultó falsa. Haberla evaluado con un protocolo riguroso evitó adoptar un cambio que empeoraba el modelo en 3,3 puntos, y dejó documentado por qué no conviene volver a proponerlo en su forma simple.
 
