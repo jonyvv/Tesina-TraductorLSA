@@ -178,7 +178,7 @@ persona, así que sirven para armar la matriz de confusión del dataset entero.
 **LOSO no guarda modelos**: es un protocolo de medición, no produce un `.pt` para
 servir. El modelo que se sirve sale de `ml/train_lsa64.py`.
 
-Última medición registrada (11/8/2026): **79,8 % ± 8,9 %** signer-independent.
+Última medición registrada (18/10/2026): **81,7 % ± 7,9 %** signer-independent, con dropout 0,4 y descarte aleatorio de cuadros 0,30 (`ml/reports/loso_do40_fd30.json`). La configuración de referencia, sin regularización, daba 79,8 % ± 8,9 %.
 El análisis de ese número está en `docs/PROXIMOS_PASOS.md`.
 
 #### Línea base no neuronal (Random Forest)

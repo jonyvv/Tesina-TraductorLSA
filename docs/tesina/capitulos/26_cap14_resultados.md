@@ -10,41 +10,43 @@ El problema no es de medición, sino de muestra. Con dos personas en la prueba, 
 
 ## 14.2 Resultado principal
 
-Con la validación LOSO de 10 particiones (sección 10.6), sobre las 2862 secuencias de LSA64 que superan el filtrado y las 64 clases, el modelo obtuvo:
+Con la validación LOSO de 10 particiones (sección 10.6), sobre las 2862 secuencias de LSA64 que superan el filtrado y las 64 clases, el modelo en su configuración definitiva —con dropout 0,4 y descarte aleatorio de cuadros con probabilidad 0,30, que son las técnicas de regularización cuya elección se justifica en la sección 14.6— obtuvo:
 
-> Exactitud independiente del sujeto: **79,8 % ± 8,9 %** (media ± desvío entre las 10 particiones).
+> Exactitud independiente del sujeto: **81,7 % ± 7,9 %** (media ± desvío entre las 10 particiones).
 
-La exactitud calculada sobre las 2862 predicciones agrupadas —cada secuencia predicha una vez por un modelo que nunca vio a esa persona— es de 79,9 %, prácticamente igual a la media de las particiones. La ejecución completa tardó 55 minutos. La @tab:loso detalla cada partición y la @fig:loso-sujeto la representa gráficamente.
+La exactitud calculada sobre las 2862 predicciones agrupadas —cada secuencia predicha una vez por un modelo que nunca vio a esa persona— es de 81,8 %, prácticamente igual a la media de las particiones. La ejecución completa tardó 53 minutos. La @tab:loso detalla cada partición y la @fig:loso-sujeto la representa gráficamente.
 
 Tabla: Resultados por partición de la validación leave-one-subject-out. {#tab:loso}
 
 | Persona de prueba | Persona de validación | Secuencias de entrenamiento | Secuencias de prueba | Mejor época | Exactitud |
 |---|---|---|---|---|---|
-| S01 | S02 | 2270 | 286 | 34 | 86,4 % |
-| S02 | S03 | 2274 | 306 | 7 | 75,5 % |
-| S03 | S04 | 2283 | 282 | 12 | 63,1 % |
-| S04 | S05 | 2309 | 297 | 15 | 82,2 % |
-| S05 | S06 | 2310 | 256 | 16 | 87,1 % |
-| S06 | S07 | 2262 | 296 | 20 | 80,7 % |
-| S07 | S08 | 2297 | 304 | 14 | 89,5 % |
-| S08 | S09 | 2297 | 261 | 9 | 66,3 % |
-| S09 | S10 | 2288 | 304 | 24 | 85,5 % |
-| S10 | S01 | 2306 | 270 | 26 | 81,9 % |
-| **Media ± desvío** | | | | | **79,8 % ± 8,9 %** |
+| S01 | S02 | 2270 | 286 | 27 | 86,4 % |
+| S02 | S03 | 2274 | 306 | 30 | 84,0 % |
+| S03 | S04 | 2283 | 282 | 19 | 66,7 % |
+| S04 | S05 | 2309 | 297 | 25 | 87,2 % |
+| S05 | S06 | 2310 | 256 | 16 | 88,3 % |
+| S06 | S07 | 2262 | 296 | 19 | 78,7 % |
+| S07 | S08 | 2297 | 304 | 18 | 91,8 % |
+| S08 | S09 | 2297 | 261 | 26 | 70,5 % |
+| S09 | S10 | 2288 | 304 | 43 | 82,6 % |
+| S10 | S01 | 2306 | 270 | 19 | 80,7 % |
+| **Media ± desvío** | | | | | **81,7 % ± 7,9 %** |
 
 ![Exactitud por persona en la validación leave-one-subject-out. La línea indica la media y la banda, un desvío. En rojo, las personas por debajo de la media menos un desvío.](figuras/fig_loso_por_sujeto.png){ancho=14.5 #fig:loso-sujeto}
 
-**El desvío es un hallazgo, no un defecto de la medición.** Entre la persona con mejor resultado (S07, 89,5 %) y la de peor resultado (S03, 63,1 %) hay 26 puntos. Ninguna partición es un valor atípico según la regla habitual de 1,5 veces el rango intercuartílico: el límite inferior es 62,8 % y el peor valor es 63,1 %. La variación es, por lo tanto, una propiedad del problema: el modelo funciona bien para la mayoría de las personas y notablemente peor para dos de ellas, S03 y S08. Un número único, obtenido con un reparto que dejara a esas dos personas en el entrenamiento, habría ocultado este comportamiento.
+**El desvío es un hallazgo, no un defecto de la medición.** Entre la persona con mejor resultado (S07, 91,8 %) y la de peor resultado (S03, 66,7 %) hay 25 puntos. Las únicas dos personas por debajo de la media menos un desvío son S03 y S08, las mismas dos en las que el modelo ya fallaba antes de la regularización. S03 queda además 0,9 puntos por debajo del límite que la regla habitual de 1,5 veces el rango intercuartílico fija en 67,6 %, de modo que califica como valor atípico; no se la descarta, porque la causa está identificada —es una de las dos personas con peor detección de manos del conjunto (sección 14.5)— y excluirla sería ocultar justamente el caso que interesa. La variación es, por lo tanto, una propiedad del problema: el modelo funciona bien para la mayoría de las personas y notablemente peor para dos de ellas. Un número único, obtenido con un reparto que dejara a esas dos personas en el entrenamiento, habría ocultado este comportamiento.
+
+**A qué ejecución corresponde cada análisis.** El resultado principal es el de la configuración definitiva, pero la sección 14.6 reconstruye cómo se llegó a ella: la configuración de referencia, sin regularización, obtenía 79,8 % ± 8,9 %. Los análisis de error por clase (sección 14.4), la asociación con la calidad de la detección (sección 14.5) y la comparación con la línea base no neuronal (sección 14.7.1) se hicieron sobre esa ejecución de referencia, que es la que estaba disponible al momento de hacerlos, y sus conclusiones son cualitativas: qué clases se confunden, qué explica la variación entre personas y cuánto aporta el orden temporal. Cada apartado aclara a qué ejecución corresponde. [[PENDIENTE: repetir el análisis por clase, la correlación con la retención y la comparación con la línea base sobre la ejecución regularizada, para que todo el capítulo informe la misma configuración.]]
 
 ## 14.3 Curva de entrenamiento y sobreajuste
 
-La @fig:curva muestra la evolución del entrenamiento del modelo servido (reparto único, semilla 42). La pérdida de entrenamiento desciende de forma sostenida, de 2,55 en la primera época a 0,16 en la última, mientras que la exactitud de validación deja de mejorar a partir de la época 11 (81,6 %) y oscila alrededor del 78 % hasta que la detención temprana corta el entrenamiento en la época 19.
+La @fig:curva muestra la evolución del entrenamiento del modelo servido (reparto único, semilla 42, ya con la configuración definitiva de la sección 14.6.3). La pérdida de entrenamiento desciende de forma sostenida, de 2,73 en la primera época a 0,12 en la última, mientras que la exactitud de validación alcanza su mejor valor en la época 19 (84,0 %) y después oscila alrededor del 80 %, sin volver a superarlo, hasta que la detención temprana corta el entrenamiento en la época 27.
 
 ![Pérdida de entrenamiento y exactitud de validación por época del modelo servido. La línea punteada marca la mejor época, cuyos pesos se conservan.](figuras/fig_curva_entrenamiento.png){ancho=14 #fig:curva}
 
-Es el patrón típico del sobreajuste (sección 2.3): a partir de cierto punto, el modelo sigue aprendiendo particularidades del conjunto de entrenamiento que no generalizan a la persona de validación. La detención temprana evita que el modelo empeore, pero no resuelve la causa. Las técnicas de regularización evaluadas para atacarla se presentan en la sección 14.6.
+Es el patrón típico del sobreajuste (sección 2.3): a partir de cierto punto, el modelo sigue aprendiendo particularidades del conjunto de entrenamiento que no generalizan a la persona de validación. La detención temprana evita que el modelo empeore, pero no resuelve la causa. La brecha persiste incluso con la regularización adoptada —una pérdida de entrenamiento de 0,12 contra un 80 % de validación—, de modo que atacarla fue una mejora y no una solución: la sección 14.6 presenta las técnicas evaluadas, cuánto aportó cada una y por qué el margen que queda está en las características antes que en el clasificador.
 
-El modelo servido obtuvo una exactitud de prueba de **81,25 %** sobre las personas S01 y S02, coherente con el resultado LOSO de esas dos personas (86,4 % y 75,5 %).
+El modelo servido obtuvo una exactitud de prueba de **83,95 %** sobre las personas S01 y S02, coherente con el resultado LOSO de esas dos personas (86,4 % y 84,0 %). El modelo anterior, sin regularización, obtenía 81,25 % sobre el mismo reparto.
 
 ## 14.4 Análisis por clase
 
@@ -167,17 +169,17 @@ La interpretación es coherente con el diagnóstico de la sección 14.3: el mode
 
 **El modelo servido se reentrenó con esta configuración.** Sobre el reparto único de referencia obtiene 83,95 % de exactitud de prueba, frente al 81,25 % anterior; ese número arrastra la variabilidad del reparto único (sección 14.1) y se informa sólo por continuidad con el modelo anterior: el resultado defendible es el LOSO.
 
-[[PENDIENTE (decisión de los autores): si esta configuración queda como la definitiva, el resultado principal de la tesina pasa a ser 81,7 % ± 7,9 % y hay que actualizarlo en la sección 14.2, en el resumen, en las conclusiones y en el anteproyecto, además de regenerar las figuras desde `ml/reports/loso_do40_fd30.json`. Mientras tanto el documento informa 79,8 % como resultado principal y esta sección como una mejora medida, que es la situación que corresponde hasta tomar esa decisión.]]
+**Esta es la configuración definitiva del trabajo.** Se adopta como tal por tres razones: está medida con el mismo protocolo que la de referencia, mejora tanto la media como la dispersión, y es la que ya sirve el sistema. En consecuencia, el resultado principal que informa la tesina es el 81,7 % ± 7,9 % de la sección 14.2, y la configuración de referencia queda documentada en este capítulo como el punto de partida contra el cual se midieron las mejoras.
 
 El resultado de la representación v2 merece un comentario. Que agregar la ubicación no mejore, cuando el análisis de confusiones sugiere que la ubicación es la información faltante, tiene al menos dos explicaciones posibles: que la posición de la muñeca en el encuadre no sea una buena medida de la ubicación respecto del cuerpo, o que las dos personas evaluadas fallen por la detección y no por la ubicación. Distinguir ambas requiere evaluar v2 con el LOSO completo y, eventualmente, una representación de la ubicación relativa al cuerpo.
 
 ## 14.7 Comparación con los antecedentes
 
-La @tab:antecedentes del Capítulo 5 ubica el resultado propio respecto de la literatura. En el mismo protocolo —independiente del sujeto—, el 79,8 % supera el 74,22 % de Marais et al. (2022) y queda por debajo del 98,53 % de Akdag y Baykan (2024), obtenido con un modelo convolucional 3D sobre el video completo. El 99,4 % de Mindlin (2021) corresponde a un protocolo dependiente del sujeto y no es comparable.
+La @tab:antecedentes del Capítulo 5 ubica el resultado propio respecto de la literatura. En el mismo protocolo —independiente del sujeto—, el 81,7 % supera el 74,22 % de Marais et al. (2022) y queda por debajo del 98,53 % de Akdag y Baykan (2024), obtenido con un modelo convolucional 3D sobre el video completo. El 99,4 % de Mindlin (2021) corresponde a un protocolo dependiente del sujeto y no es comparable.
 
 ### 14.7.1 Línea base no neuronal
 
-Para justificar el uso de una red recurrente es necesario compararla con un modelo más simple. La línea base es un bosque aleatorio (sección 2.6) de 500 árboles entrenado sobre un resumen de cada secuencia —media, desvío, mínimo y máximo de cada característica, lo que convierte una secuencia de largo variable en un vector fijo de 552 valores—, evaluado con el mismo protocolo LOSO, sobre el mismo caché y con las mismas diez particiones. El bosque se entrena con las mismas ocho personas que la red: la persona de validación queda afuera aunque el bosque no la necesite, porque entrenarlo con nueve mediría el tamaño del conjunto y no el modelo.
+Para justificar el uso de una red recurrente es necesario compararla con un modelo más simple. La comparación se hizo contra la configuración de referencia de la red, que es la que estaba entrenada cuando se corrió la línea base; como la regularización mejora la red en 1,9 puntos (sección 14.6.3), la ventaja que se informa acá es la más conservadora de las dos. La línea base es un bosque aleatorio (sección 2.6) de 500 árboles entrenado sobre un resumen de cada secuencia —media, desvío, mínimo y máximo de cada característica, lo que convierte una secuencia de largo variable en un vector fijo de 552 valores—, evaluado con el mismo protocolo LOSO, sobre el mismo caché y con las mismas diez particiones. El bosque se entrena con las mismas ocho personas que la red: la persona de validación queda afuera aunque el bosque no la necesite, porque entrenarlo con nueve mediría el tamaño del conjunto y no el modelo.
 
 El resumen estadístico descarta el orden temporal por construcción: dos secuencias con los mismos cuadros en distinto orden producen el mismo vector. Esa es exactamente la propiedad que la comparación busca medir.
 
@@ -249,7 +251,7 @@ Ninguno de estos aspectos se refleja en la cifra del LOSO, y es esperable que el
 
 Los resultados permiten extraer algunas conclusiones sobre el modelo y sobre el proceso.
 
-**El protocolo de evaluación determina la cifra.** La misma familia de modelos obtiene valores cercanos al 99 % o en torno al 75 % según se mezclen o no las personas entre entrenamiento y prueba (Capítulo 5). En este trabajo, un reparto único habría permitido informar 86 % eligiendo, sin malicia, la ejecución más favorable. La cifra que se informa, 79,8 % ± 8,9 %, es menor, pero es la que corresponde al uso real del sistema: reconocer a personas que el modelo nunca vio.
+**El protocolo de evaluación determina la cifra.** La misma familia de modelos obtiene valores cercanos al 99 % o en torno al 75 % según se mezclen o no las personas entre entrenamiento y prueba (Capítulo 5). En este trabajo, un reparto único habría permitido informar 86 % eligiendo, sin malicia, la ejecución más favorable. La cifra que se informa, 81,7 % ± 7,9 %, es menor, pero es la que corresponde al uso real del sistema: reconocer a personas que el modelo nunca vio.
 
 **La calidad de la detección es el principal factor limitante.** La exactitud por persona se asocia con la retención de cuadros, las clases con peor desempeño son en buena medida las que más datos perdieron, y las señas bimanuales, con dos manos que detectar, funcionan peor. Mejorar la detección —con otros umbrales, con el modo de seguimiento de MediaPipe o con la recuperación de los videos descartados— tiene, probablemente, más potencial que modificar la red.
 
@@ -263,4 +265,4 @@ Los resultados permiten extraer algunas conclusiones sobre el modelo y sobre el 
 
 ## 14.10 Síntesis
 
-El modelo alcanza una exactitud independiente del sujeto de 79,8 % ± 8,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo. En cambio, la regularización —dropout 0,4 y descarte aleatorio de cuadros— sí mejora: 81,7 % ± 7,9 % con el protocolo completo, subiendo el piso y bajando la dispersión, y es la configuración con la que se reentrenó el modelo servido. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.
+El modelo alcanza una exactitud independiente del sujeto de 81,7 % ± 7,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Esa cifra corresponde a la configuración definitiva, con dropout 0,4 y descarte aleatorio de cuadros: la regularización mejoró en 1,9 puntos el 79,8 % ± 8,9 % de la configuración de referencia, subiendo el piso y bajando la dispersión, y es la configuración con la que se reentrenó el modelo servido. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red de referencia: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.

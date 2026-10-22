@@ -47,7 +47,7 @@ Tabla: Resultados publicados sobre LSA64 según el protocolo de evaluación. {#t
 | Marais et al. (2022) | Video RGB | InceptionV3 + GRU | Dependiente del sujeto | 97,03 % |
 | Marais et al. (2022) | Video RGB | InceptionV3 + GRU | Independiente del sujeto | 74,22 % |
 | Akdag y Baykan (2024) | Video RGB y fusión de características | Red R3(2+1)D | Independiente del sujeto | 98,53 % |
-| Esta tesina | Landmarks de MediaPipe (138 valores por cuadro) | BiLSTM | Independiente del sujeto (LOSO, 10 particiones) | 79,8 % ± 8,9 % |
+| Esta tesina | Landmarks de MediaPipe (138 valores por cuadro) | BiLSTM | Independiente del sujeto (LOSO, 10 particiones) | 81,7 % ± 7,9 % |
 
 ### 5.3.1 Mindlin (2021)
 
@@ -65,7 +65,7 @@ Akdag y Baykan (2024) reportaron 98,53 % de exactitud independiente del sujeto s
 
 ### 5.3.4 Posicionamiento del resultado propio
 
-El resultado de esta tesina, 79,8 % ± 8,9 %, se ubica por encima del resultado independiente del sujeto de Marais et al. (2022) y claramente por debajo del de Akdag y Baykan (2024). La diferencia con este último se explica principalmente por la representación de entrada: el modelo propio no ve la imagen, sino sólo la geometría de las manos que entrega MediaPipe, y pierde la información de los cuadros donde el detector falla (sección 14.5). A cambio, el modelo tiene 290 880 parámetros, se entrena en segundos sobre CPU y permite la inferencia en tiempo real en un servidor modesto. La elección no es la de mayor exactitud posible, sino la de mejor equilibrio entre exactitud y viabilidad para el objetivo de una aplicación web accesible.
+El resultado de esta tesina, 81,7 % ± 7,9 %, se ubica por encima del resultado independiente del sujeto de Marais et al. (2022) y claramente por debajo del de Akdag y Baykan (2024). La diferencia con este último se explica principalmente por la representación de entrada: el modelo propio no ve la imagen, sino sólo la geometría de las manos que entrega MediaPipe, y pierde la información de los cuadros donde el detector falla (sección 14.5). A cambio, el modelo tiene 290 880 parámetros, se entrena en segundos sobre CPU y permite la inferencia en tiempo real en un servidor modesto. La elección no es la de mayor exactitud posible, sino la de mejor equilibrio entre exactitud y viabilidad para el objetivo de una aplicación web accesible.
 
 ## 5.4 Aplicaciones existentes
 

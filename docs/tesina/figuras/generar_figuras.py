@@ -81,7 +81,11 @@ def acc_por_sujeto(reporte: dict) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 def fig_loso_por_sujeto() -> None:
-    rep = cargar("loso_lsa64.json")
+    # Configuracion definitiva (dropout 0,4 + descarte de cuadros 0,30): es la
+    # que informa el resultado principal en 14.2. La de referencia
+    # (loso_lsa64.json) se grafica en fig_filtrado_vs_grilla y fig_baseline_rf,
+    # que son comparaciones hechas sobre esa ejecucion.
+    rep = cargar("loso_do40_fd30.json")
     acc = acc_por_sujeto(rep)
     sujetos = sorted(acc)
     valores = [acc[s] for s in sujetos]
