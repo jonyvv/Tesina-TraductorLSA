@@ -1,0 +1,4 @@
+# Archivo temporal de Word mientras el .docx está abierto
+salida/~$*
+# Copia con fecha y versión para subir al Drive (se regenera con postproceso.ps1)
+salida/AnteproyectoProvenzanoVidela*.pdf
