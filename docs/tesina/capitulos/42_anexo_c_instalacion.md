@@ -1,6 +1,6 @@
 # Anexo C — Guía de instalación y ejecución
 
-Este anexo resume los pasos para reproducir el sistema a partir del repositorio. La versión completa y actualizada está en el archivo `README.md` del repositorio. [[PENDIENTE: agregar la dirección del repositorio y la carpeta compartida "Fuentes del proyecto" exigida por la facultad.]]
+Este anexo resume los pasos para reproducir el sistema a partir del repositorio. El código fuente está disponible en el repositorio público https://github.com/jonyvv/Tesina-TraductorLSA, y la versión completa y actualizada de estas instrucciones, en su archivo `README.md`. [[PENDIENTE: agregar la dirección de la carpeta compartida "Fuentes del proyecto" que exige la facultad.]]
 
 ## C.1 Requisitos
 

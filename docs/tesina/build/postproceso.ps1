@@ -9,11 +9,17 @@
 # Uso (desde docs/tesina/build):
 #     powershell -ExecutionPolicy Bypass -File postproceso.ps1
 #
+# Con -Docx sirve para otro documento (el anteproyecto, la hoja de avance), y
+# -Entrega cambia el prefijo de la copia con fecha y versión.
+#
 # Requiere Word instalado (usa automatización COM).
 # =============================================================================
+param(
+    [string]$Docx = (Join-Path $PSScriptRoot "..\salida\Tesina-TraductorLSA.docx"),
+    [string]$Entrega = "ProvenzanoVidela"
+)
 $ErrorActionPreference = "Stop"
-$salida = Join-Path $PSScriptRoot "..\salida"
-$docx = (Resolve-Path (Join-Path $salida "Tesina-TraductorLSA.docx")).Path
+$docx = (Resolve-Path $Docx).Path
 $pdf = [System.IO.Path]::ChangeExtension($docx, ".pdf")
 
 $word = New-Object -ComObject Word.Application
@@ -40,7 +46,7 @@ try {
     # Copia con el nombre que pide la facultad para subir al Drive:
     # apellidos + fecha + version, p. ej. ProvenzanoVidela20261001v01.pdf
     $version = if ($env:VERSION) { $env:VERSION } else { "01" }
-    $entrega = Join-Path (Split-Path $pdf) ("ProvenzanoVidela{0}v{1}.pdf" -f (Get-Date -Format "yyyyMMdd"), $version)
+    $entrega = Join-Path (Split-Path $pdf) ("{0}{1}v{2}.pdf" -f $Entrega, (Get-Date -Format "yyyyMMdd"), $version)
     Copy-Item $pdf $entrega -Force
     Write-Output "Copia para entregar: $entrega"
     $doc.Close()

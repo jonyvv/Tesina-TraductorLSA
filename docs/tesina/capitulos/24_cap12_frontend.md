@@ -16,7 +16,7 @@ La @fig:interfaz muestra la interfaz en su tema claro. A la izquierda se ubica e
 
 ![Interfaz del cliente web en su tema claro, antes de iniciar la cámara.](figuras/cap_interfaz_claro.png){ancho=15 #fig:interfaz}
 
-[[PENDIENTE: agregar una captura con la cámara activa, el esqueleto dibujado y una seña reconocida (requiere hacerla con una cámara real; ver tarea F1 del plan).]]
+[[PENDIENTE: agregar una captura con la cámara activa, el esqueleto de la mano dibujado y una seña reconocida.]]
 
 ## 12.2 Captura y envío de cuadros
 
@@ -92,5 +92,5 @@ La @fig:interfaz-oscuro muestra el tema oscuro, que se aplica automáticamente c
 
 ## 12.7 Diseño adaptable
 
-La interfaz se adapta al ancho de la pantalla: en pantallas angostas, los paneles laterales pasan a ubicarse debajo del video, en una sola columna, y los botones ocupan todo el ancho para facilitar su uso táctil. [[PENDIENTE: verificar en un teléfono real; en una prueba con un navegador sin interfaz gráfica a 400 píxeles de ancho algunos paneles parecían desbordar a la derecha. Ver tarea F2 del plan.]]
+La interfaz se adapta al ancho de la pantalla: en pantallas angostas, los paneles laterales pasan a ubicarse debajo del video, en una sola columna, y los botones ocupan todo el ancho para facilitar su uso táctil. [[PENDIENTE: verificar en un teléfono real; en una prueba con un navegador sin interfaz gráfica, a 400 píxeles de ancho, algunos paneles parecían desbordar a la derecha.]]
 

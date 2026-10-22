@@ -1,6 +1,6 @@
 # Agradecimientos
 
-[[PENDIENTE: este apartado es personal y conviene que lo escriban ustedes. Lo que sigue es un borrador de partida para editar libremente.]]
+[[PENDIENTE: borrador; los autores completarán este apartado en la versión final.]]
 
 Este trabajo no habría sido posible sin el acompañamiento de muchas personas. En primer lugar, agradecemos a los docentes de la Licenciatura en Sistemas de Información de la Universidad Champagnat, que a lo largo de la carrera nos dieron las herramientas para encarar un proyecto de esta naturaleza, y en particular al Ing. Mario Alberto Mirallas, coordinador del Seminario de Licenciatura, y a Marcelo Palma, tutor de esta tesina, por la orientación y la paciencia durante todo el proceso.
 

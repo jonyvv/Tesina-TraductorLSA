@@ -125,7 +125,7 @@ Se eligió la detección en el servidor porque garantiza que el preprocesamiento
 
 ### 8.8.2 Cliente sin marco de trabajo
 
-El anteproyecto preveía desarrollar el cliente con React. Durante el diseño se optó por HTML, CSS y JavaScript sin marco de trabajo, separados en tres archivos por responsabilidad. La interfaz consiste en una única pantalla con un video, un panel de resultados y algunos controles: un marco de trabajo agregaría un proceso de compilación, dependencias y un segundo servidor durante el desarrollo, sin un beneficio proporcional. Además, al no requerir compilación, el backend puede servir los archivos del cliente directamente y todo el sistema se despliega como un único servicio, lo que ahorra recursos en la capa gratuita. [[PENDIENTE: validar con el tutor este cambio respecto del anteproyecto.]]
+El anteproyecto preveía desarrollar el cliente con React. Durante el diseño se optó por HTML, CSS y JavaScript sin marco de trabajo, separados en tres archivos por responsabilidad. La interfaz consiste en una única pantalla con un video, un panel de resultados y algunos controles: un marco de trabajo agregaría un proceso de compilación, dependencias y un segundo servidor durante el desarrollo, sin un beneficio proporcional. Además, al no requerir compilación, el backend puede servir los archivos del cliente directamente y todo el sistema se despliega como un único servicio, lo que ahorra recursos en la capa gratuita.
 
 ### 8.8.3 Otras decisiones
 

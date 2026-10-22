@@ -28,7 +28,7 @@ Desarrollar una aplicación web basada en inteligencia artificial que permita la
 4. Desarrollar la aplicación web que capture video en tiempo real, se comunique con el modelo y presente la traducción de forma accesible.
 5. Desplegar el sistema en una plataforma en la nube dentro de los límites de una capa gratuita.
 
-El tercer objetivo no figuraba en el anteproyecto y se incorporó durante el desarrollo, al comprobar que las mediciones de exactitud obtenidas con un único reparto de los datos variaban varios puntos según qué personas quedaban en el conjunto de prueba (ver la sección 14.1). Sin una evaluación rigurosa, ninguna cifra de desempeño del modelo podía sostenerse.
+El anteproyecto preveía medir la exactitud del modelo sobre datos no utilizados en el entrenamiento. El tercer objetivo amplía esa medición a un protocolo independiente del sujeto y se incorporó durante el desarrollo, al comprobar que las mediciones de exactitud obtenidas con un único reparto de los datos variaban varios puntos según qué personas quedaban en el conjunto de prueba (ver la sección 14.1). Sin una evaluación rigurosa, ninguna cifra de desempeño del modelo podía sostenerse.
 
 ## Alcances y limitaciones
 
@@ -36,7 +36,7 @@ El tercer objetivo no figuraba en el anteproyecto y se incorporó durante el des
 
 - Aplicación web con traducción en tiempo real desde la cámara del dispositivo, utilizable desde computadoras y dispositivos móviles con navegador moderno.
 - Reconocimiento de las 64 señas aisladas del conjunto LSA64 (Ronchetti et al., 2016b), que incluyen colores, alimentos, verbos y sustantivos de uso cotidiano (ver el Anexo A).
-- Infraestructura para el reconocimiento de configuraciones manuales estáticas (como las letras del alfabeto manual), con un pipeline de captura y entrenamiento propio. [[PENDIENTE: definir el alcance final del abecedario — ver docs/tesina/PLAN.md, decisión D1.]]
+- Reconocimiento del abecedario de la LSA (alfabeto manual), con un pipeline propio de captura y entrenamiento de configuraciones manuales estáticas. [[PENDIENTE: en desarrollo. El pipeline está implementado y probado con dos letras (sección 9.8); resta capturar y evaluar el abecedario completo.]]
 - Despliegue del sistema como un único servicio en contenedor.
 
 ### Limitaciones

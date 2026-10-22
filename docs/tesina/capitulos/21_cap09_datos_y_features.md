@@ -79,7 +79,7 @@ El episodio muestra un límite de la estrategia del módulo compartido: evita la
 
 Para el reconocimiento de configuraciones estáticas se desarrolló un script de captura (`ml/capture_dataset.py`) que abre la cámara, detecta las manos y guarda cada muestra como un archivo JSON con su vector de características y sus metadatos: etiqueta, persona, sesión y condición de iluminación. El script de entrenamiento correspondiente (`ml/train.py`) agrupa las muestras por sesión al dividirlas, de modo que todas las muestras de una misma sesión de captura queden del mismo lado, y aborta con un mensaje explicativo si alguna clase tiene una única sesión, porque en ese caso el reparto dejaría clases enteras fuera del entrenamiento.
 
-Como prueba de concepto se capturaron 120 muestras de dos letras (A y C), en dos sesiones, realizadas por uno de los autores. Esta cantidad permite verificar que el pipeline funciona de punta a punta, pero no constituye un conjunto de datos del que puedan extraerse conclusiones. [[PENDIENTE: según la decisión D1 del plan, completar con la captura del abecedario (varias personas y sesiones, con consentimiento informado) o incorporar LSA16, y reportar los resultados en el Capítulo 14.]]
+Como prueba de concepto se capturaron 120 muestras de dos letras (A y C), en dos sesiones, realizadas por uno de los autores. Esta cantidad permite verificar que el pipeline funciona de punta a punta, pero no constituye un conjunto de datos del que puedan extraerse conclusiones. [[PENDIENTE: en desarrollo; resta capturar el abecedario completo con varias personas y sesiones, con consentimiento informado, y reportar sus resultados en el Capítulo 14.]]
 
 ## 9.9 Extracción en dos etapas
 
@@ -101,7 +101,7 @@ No todos los cuadros tienen manos detectadas. La extracción guarda siempre la s
 
 La pérdida no es uniforme. Por persona, la proporción de cuadros con manos detectadas —que se denomina **retención**— varía entre 58,5 % y 75,7 %. Por seña, la diferencia es aún mayor: algunas clases conservan casi todas sus muestras y otras pierden más de la mitad, como "Paciencia", que conserva 22 de sus 50 videos, u "Hombre", que conserva 23. Son señas en las que MediaPipe no logra detectar las manos con regularidad, posiblemente por oclusiones, movimientos rápidos o los guantes de color usados en la grabación (sección 4.5). La sección 14.5 muestra que la retención está asociada con la exactitud del modelo.
 
-[[PENDIENTE (tarea M3 del plan): probar umbrales de detección más bajos y el modo VIDEO de MediaPipe, que usa seguimiento entre cuadros, para medir cuántas secuencias se recuperan.]]
+[[PENDIENTE: probar umbrales de detección más bajos y el modo VIDEO de MediaPipe, que usa seguimiento entre cuadros, y medir cuántas secuencias se recuperan.]]
 
 ## 9.11 Errores detectados en el pipeline de datos
 

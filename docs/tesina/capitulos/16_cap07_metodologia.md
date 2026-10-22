@@ -16,7 +16,7 @@ El marco elegido fue **Scrum** (Schwaber y Sutherland, 2020), adaptado a un equi
 
 ### 7.1.2 Tablero Kanban
 
-Las tareas se gestionaron en un tablero **Kanban** con tres columnas —por hacer, en progreso y terminado—, que hace visible el estado del trabajo y limita la cantidad de tareas abiertas al mismo tiempo. [[PENDIENTE: indicar la herramienta efectivamente usada (GitHub Projects o Trello) e incluir una captura del tablero.]]
+Las tareas se gestionaron en un tablero **Kanban** con tres columnas —por hacer, en progreso y terminado—, que hace visible el estado del trabajo y limita la cantidad de tareas abiertas al mismo tiempo. [[PENDIENTE: indicar la herramienta utilizada para el tablero e incluir una captura.]]
 
 ## 7.2 División del trabajo
 
@@ -25,7 +25,7 @@ El trabajo se organizó en dos frentes, cada uno con un responsable principal:
 - **Modelo de reconocimiento** (Jonatan Videla): preparación de los datos de LSA64, extracción de características, entrenamiento de la red, validación leave-one-subject-out y experimentos de mejora.
 - **Aplicación** (Leandro Provenzano): arquitectura del sistema, backend de inferencia, cliente web, accesibilidad, pruebas automatizadas, contenedor de despliegue y documentación.
 
-[[PENDIENTE: el anteproyecto asignaba los roles de forma inversa (Leandro: red neuronal; Jonatan: aplicación web). Confirmar la división real y unificar el criterio con la sección de Recursos Humanos.]]
+En la práctica, esta división resultó inversa a la prevista en la sección de recursos humanos del anteproyecto, que asignaba la red neuronal a Leandro Provenzano y la aplicación web a Jonatan Videla, y se mantuvo así durante todo el proyecto.
 
 Ambos frentes compartían un punto de contacto crítico: el módulo de extracción de características, que debe producir exactamente los mismos vectores durante el entrenamiento y durante el uso. Ese módulo se diseñó desde el comienzo como código compartido entre los dos frentes (sección 8.5), y su contrato se documentó en el propio código.
 
@@ -72,7 +72,7 @@ Tabla: Herramientas utilizadas en el desarrollo. {#tab:herramientas}
 | Documentación | Markdown, matplotlib | Documentación técnica y figuras de resultados |
 | Edición | Visual Studio Code | Editor principal |
 
-[[PENDIENTE: decidir si se declara el uso de asistentes de programación basados en IA durante el desarrollo y la documentación. Si se usaron, se recomienda declararlo aquí con una frase que describa el uso (por ejemplo, como apoyo en revisión de código y redacción, con verificación humana de todo resultado).]]
+Durante el desarrollo y la redacción de este documento se utilizaron asistentes de programación basados en inteligencia artificial (Claude, de Anthropic) como apoyo en la escritura y la revisión de código, en la búsqueda de errores y en la redacción y corrección de textos. Todo resultado obtenido con su ayuda fue revisado y probado por los autores, que son responsables del contenido del trabajo. Las contribuciones de estos asistentes quedan registradas en el historial del repositorio.
 
 ## 7.7 Cronograma
 

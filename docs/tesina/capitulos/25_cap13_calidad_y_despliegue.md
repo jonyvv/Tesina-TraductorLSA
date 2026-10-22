@@ -40,14 +40,14 @@ Las pruebas de `test_backend_e2e.py` levantan la aplicación completa con el cli
 
 ### 13.1.3 Limitaciones de las pruebas
 
-Las pruebas verifican la lógica del sistema, pero no la calidad del reconocimiento con personas reales frente a una cámara, que sólo puede evaluarse experimentalmente (Capítulo 14). Tampoco hay pruebas automatizadas del código JavaScript del cliente. [[PENDIENTE: configurar la ejecución automática de las pruebas en cada envío al repositorio (por ejemplo, con GitHub Actions) — tarea Q1 del plan.]]
+Las pruebas verifican la lógica del sistema, pero no la calidad del reconocimiento con personas reales frente a una cámara, que sólo puede evaluarse experimentalmente (Capítulo 14). Tampoco hay pruebas automatizadas del código JavaScript del cliente. [[PENDIENTE: configurar la ejecución automática de las pruebas en cada envío al repositorio, por ejemplo con GitHub Actions.]]
 
 ## 13.2 Seguridad y privacidad
 
 - **Sin almacenamiento de video.** Los cuadros recibidos se decodifican, se procesan en memoria y se descartan. El servidor no guarda imágenes ni secuencias de los usuarios (requisito RNF-06).
 - **Usuario sin privilegios.** El contenedor ejecuta la aplicación con un usuario sin privilegios de administrador, de modo que una eventual vulnerabilidad en una dependencia tenga un alcance limitado.
 - **Carga de modelos.** El formato de PyTorch permite, en general, ejecutar código arbitrario al cargar un archivo de pesos. El backend sólo carga el modelo versionado en el propio repositorio, generado por los scripts del proyecto, y nunca archivos provistos por los usuarios.
-- **Orígenes permitidos (CORS).** Durante el desarrollo, el servidor acepta solicitudes de cualquier origen. Para la versión desplegada debe restringirse al dominio de la aplicación. [[PENDIENTE: tarea D2 del plan — hay una propuesta en la rama `mejoras/despliegue`.]]
+- **Orígenes permitidos (CORS).** Durante el desarrollo, el servidor acepta solicitudes de cualquier origen. Para la versión desplegada, los orígenes permitidos se configuran con la variable de entorno `LSA_CORS_ORIGINS`, que debe contener el dominio de la aplicación. [[PENDIENTE: este cambio está implementado en la rama `mejoras/despliegue` y se integrará antes del despliegue.]]
 - **HTTPS.** Los navegadores sólo permiten el acceso a la cámara en contextos seguros (sección 6.4), por lo que la versión publicada debe servirse con HTTPS. Las plataformas en la nube consideradas proveen certificados de forma automática.
 
 ## 13.3 Contenedor
@@ -62,7 +62,7 @@ El sistema se empaqueta en una única imagen de Docker, definida en el `Dockerfi
 
 ### 13.3.1 Tamaño de la imagen
 
-PyTorch es necesario para servir la BiLSTM, pero la distribución por defecto incluye las bibliotecas de CUDA para GPU, que ocupan varios gigabytes y no se usan: la inferencia de una ventana de cuadros por vez se resuelve en CPU en pocos milisegundos. La distribución sólo para CPU ocupa una fracción de ese tamaño. Usarla es importante para la capa gratuita, que limita el espacio y penaliza los tiempos de arranque de imágenes grandes. [[PENDIENTE: incorporar la instalación de PyTorch para CPU en el Dockerfile (propuesta en la rama `mejoras/despliegue`) y registrar aquí el tamaño final de la imagen.]]
+PyTorch es necesario para servir la BiLSTM, pero la distribución por defecto incluye las bibliotecas de CUDA para GPU, que ocupan varios gigabytes y no se usan: la inferencia de una ventana de cuadros por vez se resuelve en CPU en pocos milisegundos. La distribución sólo para CPU ocupa una fracción de ese tamaño. Usarla es importante para la capa gratuita, que limita el espacio y penaliza los tiempos de arranque de imágenes grandes. [[PENDIENTE: la instalación de PyTorch para CPU está implementada en la rama `mejoras/despliegue`; resta integrarla y registrar aquí el tamaño final de la imagen.]]
 
 ## 13.4 Despliegue
 
@@ -70,5 +70,5 @@ El anteproyecto establece que el despliegue debe mantenerse dentro de la capa gr
 
 La principal limitación esperable es la capacidad de cómputo. Cada cuadro de cada usuario requiere ejecutar MediaPipe en el servidor, y la CPU compartida de una capa gratuita puede atender a pocos usuarios simultáneos con latencias aceptables. La alternativa de trasladar la detección al cliente (sección 8.8.1) es la vía para escalar si fuera necesario.
 
-[[PENDIENTE: desplegar efectivamente el sistema (tarea D1 del plan) y documentar aquí la plataforma elegida, la dirección pública, los pasos seguidos, el tiempo de arranque en frío y la latencia medida desde el navegador contra el servidor publicado.]]
+[[PENDIENTE: despliegue todavía no realizado. Se documentarán aquí la plataforma elegida, la dirección pública, los pasos seguidos, el tiempo de arranque en frío y la latencia medida desde el navegador contra el servidor publicado.]]
 

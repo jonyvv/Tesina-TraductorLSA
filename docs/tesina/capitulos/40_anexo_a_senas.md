@@ -73,4 +73,4 @@ Tabla: Vocabulario de LSA64 con glosas, cantidad de manos, secuencias conservada
 
 Dos glosas en castellano no pudieron confirmarse con una fuente independiente y se adoptaron por ser la traducción más directa: la seña 009, publicada como *Women*, se glosa "Mujer", y la 048, *Spaghetti*, se glosa "Fideos".
 
-[[PENDIENTE: el anteproyecto preveía incluir en este anexo imágenes representativas de las señas. Se sugiere agregar una figura con un cuadro de cada una de algunas señas de ejemplo, tomadas de los videos de LSA64 (licencia CC BY-NC-SA 4.0, citando la fuente), en particular de los pares más confundidos de la @tab:confusiones.]]
+[[PENDIENTE: agregar, como preveía el anteproyecto, una figura con un cuadro de algunas señas de ejemplo tomadas de los videos de LSA64 (licencia CC BY-NC-SA 4.0, citando la fuente), en particular de los pares más confundidos de la @tab:confusiones.]]

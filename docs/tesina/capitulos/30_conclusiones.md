@@ -8,9 +8,9 @@ Respecto de los objetivos específicos:
 
 1. **Diseño de la arquitectura.** Se diseñó e implementó una arquitectura cliente-backend-modelo con un módulo de código compartido, que garantiza por construcción que el preprocesamiento sea el mismo en el entrenamiento y en la inferencia. El diseño separa el estado de la aplicación del estado de cada conexión, y admite modelos de distinto formato mediante adaptadores (Capítulos 8 y 11).
 2. **Entrenamiento de la red.** Se entrenó una BiLSTM de 290 880 parámetros sobre LSA64, con un proceso determinista y repartos de datos siempre por persona (Capítulos 9 y 10).
-3. **Evaluación independiente del sujeto.** El modelo alcanzó una exactitud de 79,8 % ± 8,9 % en una validación leave-one-subject-out de 10 particiones, sobre 64 clases. Se analizaron los errores por persona y por clase, y se evaluaron hipótesis de mejora (Capítulo 14). Este objetivo no figuraba en el anteproyecto: se incorporó al comprobar que un reparto único producía cifras que variaban hasta 7,5 puntos entre ejecuciones casi idénticas.
+3. **Evaluación independiente del sujeto.** El modelo alcanzó una exactitud de 79,8 % ± 8,9 % en una validación leave-one-subject-out de 10 particiones, sobre 64 clases. Se analizaron los errores por persona y por clase, y se evaluaron hipótesis de mejora (Capítulo 14). El anteproyecto sólo preveía medir la exactitud sobre datos no utilizados en el entrenamiento; el protocolo independiente del sujeto se incorporó al comprobar que un reparto único producía cifras que variaban hasta 7,5 puntos entre ejecuciones casi idénticas.
 4. **Aplicación web.** Se desarrolló un cliente accesible, que cumple los criterios de nivel AA de WCAG 2.2 aplicables, con dibujo del esqueleto de las manos, métricas de latencia y reconexión automática (Capítulo 12).
-5. **Despliegue.** El sistema está empaquetado en una imagen Docker pensada para la capa gratuita de una plataforma en la nube. [[PENDIENTE: completar con el resultado del despliegue — tarea D1 del plan.]]
+5. **Despliegue.** El sistema está empaquetado en una imagen Docker pensada para la capa gratuita de una plataforma en la nube. [[PENDIENTE: completar con el resultado del despliegue, todavía no realizado.]]
 
 ## Inconvenientes resueltos y camino recorrido
 

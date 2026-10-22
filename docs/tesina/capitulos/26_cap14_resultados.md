@@ -83,7 +83,7 @@ Tabla: Pares de señas más confundidos en el LOSO. {#tab:confusiones}
 | Ninguno | Chicle | 7 | 50 |
 | Fideos | Yogur | 7 | 50 |
 
-La confusión más frecuente es simétrica: Aprender se confunde con Caramelo y Caramelo con Aprender. Según el análisis del modelo servido, las confusiones se concentran en señas que comparten configuración manual y difieren principalmente en la **ubicación**, precisamente el parámetro que la normalización respecto de la muñeca descarta (sección 9.6). [[PENDIENTE (tarea M4 del plan): verificar con los videos de LSA64, par por par, si las señas más confundidas efectivamente comparten configuración y difieren en ubicación, y describirlo aquí con una figura de ejemplo.]]
+La confusión más frecuente es simétrica: Aprender se confunde con Caramelo y Caramelo con Aprender. Según el análisis del modelo servido, las confusiones se concentran en señas que comparten configuración manual y difieren principalmente en la **ubicación**, precisamente el parámetro que la normalización respecto de la muñeca descarta (sección 9.6). [[PENDIENTE: verificar con los videos de LSA64, par por par, si las señas más confundidas comparten configuración y difieren en ubicación, e ilustrarlo con una figura.]]
 
 ## 14.5 Detección de manos y desempeño
 
@@ -135,7 +135,7 @@ Para evaluar rápidamente las técnicas contra el sobreajuste se utilizó la eva
 - **Descarte aleatorio de cuadros con probabilidad 0,30**: 66,38 %, una mejora de 1,7 puntos, también en las dos personas. Es la técnica que simula directamente a una persona con mala detección, el caso en que el modelo falla.
 - **Representación v2 con la ubicación de la muñeca**: 64,26 %, sin mejora.
 
-Estos resultados deben leerse con cautela: son dos particiones de diez y las diferencias son pequeñas. Indican qué variantes vale la pena confirmar, no que mejoren el modelo. [[PENDIENTE (tarea M1 del plan): confirmar con el LOSO completo la combinación de dropout 0,4 y descarte de cuadros 0,30, y, si mejora, reentrenar el modelo servido.]]
+Estos resultados deben leerse con cautela: son dos particiones de diez y las diferencias son pequeñas. Indican qué variantes vale la pena confirmar, no que mejoren el modelo. [[PENDIENTE: confirmar con la validación LOSO completa la combinación de dropout 0,4 y descarte de cuadros 0,30 y, si mejora, volver a entrenar el modelo servido.]]
 
 El resultado de la representación v2 merece un comentario. Que agregar la ubicación no mejore, cuando el análisis de confusiones sugiere que la ubicación es la información faltante, tiene al menos dos explicaciones posibles: que la posición de la muñeca en el encuadre no sea una buena medida de la ubicación respecto del cuerpo, o que las dos personas evaluadas fallen por la detección y no por la ubicación. Distinguir ambas requiere evaluar v2 con el LOSO completo y, eventualmente, una representación de la ubicación relativa al cuerpo.
 
@@ -145,13 +145,13 @@ La @tab:antecedentes del Capítulo 5 ubica el resultado propio respecto de la li
 
 ### 14.7.1 Línea base no neuronal
 
-Para justificar el uso de una red recurrente, es necesario compararla con un modelo más simple. La línea base prevista es un bosque aleatorio (sección 2.6) entrenado sobre un resumen de cada secuencia —media, desvío, mínimo y máximo de cada característica—, evaluado con el mismo protocolo LOSO. [[PENDIENTE (tarea M2 del plan): ejecutar la línea base y completar este apartado con su resultado. Si el bosque aleatorio obtiene un resultado cercano al de la BiLSTM, la conclusión es que el orden temporal aporta poco con esta representación, lo que también es un resultado relevante.]]
+Para justificar el uso de una red recurrente, es necesario compararla con un modelo más simple. La línea base prevista es un bosque aleatorio (sección 2.6) entrenado sobre un resumen de cada secuencia —media, desvío, mínimo y máximo de cada característica—, evaluado con el mismo protocolo LOSO. Si el bosque aleatorio obtuviera un resultado cercano al de la BiLSTM, la conclusión sería que el orden temporal aporta poco con esta representación, lo que también es un resultado relevante. [[PENDIENTE: ejecutar la línea base y completar este apartado con su resultado.]]
 
 ## 14.8 Desempeño en tiempo real
 
 ### 14.8.1 Latencia
 
-[[PENDIENTE (tarea F3 del plan): medir la latencia con el panel de rendimiento del cliente, en tres escenarios — servidor local, servidor en la red local y servidor desplegado — y registrar latencia total, cómputo del servidor y red, a 8 y 15 cuadros por segundo. Presentar los resultados en una tabla.]]
+[[PENDIENTE: medir la latencia con el panel de rendimiento del cliente en tres escenarios (servidor local, en la red local y desplegado), a 8 y 15 cuadros por segundo, y presentar en una tabla la latencia total, el cómputo del servidor y el tiempo de red.]]
 
 ### 14.8.2 Brecha entre el entrenamiento y el uso en tiempo real
 
@@ -161,7 +161,7 @@ La exactitud del LOSO mide la capacidad del modelo para clasificar una seña com
 2. **Segmentación.** En el entrenamiento, cada secuencia es exactamente una seña, de principio a fin. En la aplicación no se sabe dónde empieza y termina una seña: la sesión clasifica una ventana deslizante de los últimos 8 cuadros con manos detectadas (sección 11.5), que puede contener el final de una seña, el comienzo de otra o una transición.
 3. **Condiciones de captura.** LSA64 se grabó con fondo blanco, ropa negra, guantes de color e iluminación controlada. Una cámara web doméstica captura escenas más variadas.
 
-Ninguno de estos aspectos se refleja en la cifra del LOSO, y es esperable que el desempeño percibido en la aplicación sea menor. [[PENDIENTE (tareas M5 y F3 del plan): (a) alinear la frecuencia — enviar a 15 cuadros por segundo o volver a entrenar con un muestreo equivalente al del cliente —; (b) reemplazar la ventana fija por una segmentación según la presencia de las manos, que acumule la seña completa y clasifique al bajar las manos; (c) medir el desempeño real con un protocolo simple: un conjunto de señas realizadas frente a la cámara por personas que no estén en LSA64, registrando aciertos, errores y señas no detectadas.]]
+Ninguno de estos aspectos se refleja en la cifra del LOSO, y es esperable que el desempeño percibido en la aplicación sea menor. Para reducir esta brecha se prevén tres acciones: (a) alinear la frecuencia, enviando a 15 cuadros por segundo o volviendo a entrenar con un muestreo equivalente al del cliente; (b) reemplazar la ventana fija por una segmentación según la presencia de las manos, que acumule la seña completa y la clasifique al bajar las manos; y (c) medir el desempeño real con un protocolo simple: un conjunto de señas realizadas frente a la cámara por personas que no estén en LSA64, registrando aciertos, errores y señas no detectadas. [[PENDIENTE: implementar estas acciones y reportar aquí sus resultados.]]
 
 ## 14.9 Discusión
 

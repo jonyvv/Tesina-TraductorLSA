@@ -66,7 +66,7 @@ Prechelt, L. (1998). Early stopping — but when? En G. B. Orr y K.-R. Müller (
 
 Ramírez, S. (s.f.). *FastAPI*. Recuperado el 30 de septiembre de 2026, de https://fastapi.tiangolo.com
 
-Ronchetti, F., Quiroga, F., Estrebou, C., y Lanzarini, L. (2016a). Handshape recognition for Argentinian Sign Language using ProbSom. *Journal of Computer Science and Technology, 16*(1), 1–5. [[PENDIENTE: verificar los datos de esta referencia (LSA16) contra la publicación.]]
+Ronchetti, F., Quiroga, F., Estrebou, C., y Lanzarini, L. (2016a). Handshape recognition for Argentinian Sign Language using ProbSom. *Journal of Computer Science and Technology, 16*(1), 1–5. https://journal.info.unlp.edu.ar/JCST/article/view/518
 
 Ronchetti, F., Quiroga, F., Estrebou, C., Lanzarini, L., y Rosete, A. (2016b). LSA64: A dataset of Argentinian Sign Language. En *XXII Congreso Argentino de Ciencias de la Computación (CACIC 2016)*. https://facundoq.github.io/datasets/lsa64/
 

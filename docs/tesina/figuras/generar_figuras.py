@@ -482,10 +482,11 @@ def fig_gantt() -> None:
         ("Pipeline LSA64 y correcciones", "2026-08-01", "2026-08-14", NARANJA),
         ("Validación LOSO y experimentos", "2026-08-10", "2026-09-01", NARANJA),
         ("Glosas, integración y modelo servido", "2026-08-25", "2026-09-05", NARANJA),
-        ("Evaluación en tiempo real y baseline", "2026-10-01", "2026-10-25", ROJO),
-        ("Deploy en capa gratuita", "2026-10-15", "2026-11-05", ROJO),
-        ("Pruebas con usuarios", "2026-11-01", "2026-11-20", ROJO),
-        ("Redacción y revisión del documento", "2026-09-28", "2026-12-05", ROJO),
+        ("Captura y evaluación del abecedario", "2026-11-01", "2026-11-30", ROJO),
+        ("Evaluación en tiempo real y baseline", "2026-11-01", "2026-11-25", ROJO),
+        ("Deploy en capa gratuita", "2026-11-05", "2026-11-25", ROJO),
+        ("Pruebas con usuarios", "2026-11-20", "2026-12-05", ROJO),
+        ("Redacción y revisión del documento", "2026-09-28", "2026-12-10", ROJO),
     ]
     import datetime as dt
     fig, ax = plt.subplots(figsize=(7.4, 4.2))
@@ -498,9 +499,9 @@ def fig_gantt() -> None:
     meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
     ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(
         lambda v, _: meses[matplotlib.dates.num2date(v).month - 1]))
-    hoy = matplotlib.dates.date2num(dt.date(2026, 9, 30))
+    hoy = matplotlib.dates.date2num(dt.date(2026, 10, 21))
     ax.axvline(hoy, color=GRIS, ls="--", lw=1)
-    ax.text(hoy + 2, len(tareas) - 0.6, "30/9", fontsize=7, color=GRIS)
+    ax.text(hoy + 2, len(tareas) - 0.6, "21/10", fontsize=7, color=GRIS)
     guardar(fig, "fig_gantt.png")
 
 

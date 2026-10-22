@@ -70,5 +70,5 @@ Trabajar con una lengua minoritaria y con imágenes de personas implica responsa
 
 - **Representación honesta de las capacidades.** Un sistema que "traduce" sólo 64 señas aisladas no traduce la LSA. Presentarlo como un traductor general generaría expectativas falsas y podría perjudicar a quienes confíen en él en una situación importante. Por eso la interfaz muestra la confianza de cada predicción y el documento declara explícitamente las limitaciones.
 - **Datos biométricos.** El video de una persona y la geometría de sus manos son datos personales. El sistema no almacena el video recibido: cada cuadro se procesa en memoria y se descarta. Si se capturan datos propios para entrenar (sección 9.8), es necesario el consentimiento informado de los participantes.
-- **Participación de la comunidad.** La evaluación de una herramienta destinada a la comunidad sorda debe incluir a personas sordas. [[PENDIENTE: describir la prueba con usuarios de LSA si se realiza — ver docs/tesina/PLAN.md, tarea F4.]]
+- **Participación de la comunidad.** La evaluación de una herramienta destinada a la comunidad sorda debe incluir a personas sordas. [[PENDIENTE: está prevista una prueba con personas usuarias de LSA, con consentimiento informado; su protocolo y sus resultados se describirán en la sección 14.8.2.]]
 
