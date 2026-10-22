@@ -2,6 +2,15 @@
 
 _Armado el 30/9/2026 a la noche, junto con el primer borrador completo del documento._
 
+> **Actualización 21/10/2026.** Se pausó el desarrollo para cerrar la documentación y mandarla a revisión. Decisiones tomadas:
+> - **D1 abecedario:** queda en el alcance, como en el anteproyecto aprobado; se retoma cuando siga el desarrollo.
+> - **Deploy:** se mantiene como objetivo; también se retoma después.
+> - **D4 roles:** la tesina (7.2) dice la división real y aclara que es inversa a la del anteproyecto.
+> - **D5 uso de IA:** declarado en 7.6.
+> - **D2 interlineado, D3 cliente sin React y D6 profesor de Metodología:** se consultan al profesor en `docs/avance/informe_de_avance.md`.
+>
+> Además: el anteproyecto aprobado se corrigió en forma, guía y redacción sin cambiar el plan (`docs/anteproyecto/`), y los pendientes del texto ya no remiten a los códigos de este plan, porque el documento lo lee el profesor. `verificar.py` los sigue listando.
+
 Este archivo tiene tres partes: qué quedó hecho, qué decisiones tienen que tomar ustedes antes de seguir, y las tareas concretas separadas por persona. Los códigos (D1, F3, M2…) son los mismos que aparecen resaltados en amarillo como `PENDIENTE` dentro del documento, así cada hueco del texto apunta a una tarea de acá.
 
 ---
