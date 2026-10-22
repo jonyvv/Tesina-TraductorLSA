@@ -312,7 +312,8 @@ Conforme a las limitaciones del anteproyecto (capa gratuita de Render/Railway/GC
 - **Dependencia de PyTorch**: hace falta solo para servir el `.pt`, pero como ese es el modelo que se elige por defecto, está declarada en `backend/requirements.txt`. En el contenedor conviene instalar la rueda CPU (`--index-url https://download.pytorch.org/whl/cpu`): son ~200 MB en vez de ~2,5 GB, y la GPU no se usa para inferir de a una ventana por vez.
 - **Puerto**: Render y Railway lo inyectan por `$PORT`; el contenedor lo respeta y cae a 8000 en local.
 - **Usuario**: el contenedor corre como usuario sin privilegios, no como root.
-- **CORS**: restringir `allow_origins` al dominio real antes de la entrega final (hoy está en `"*"` para desarrollo).
+- **CORS**: los orígenes permitidos salen de la variable de entorno `LSA_CORS_ORIGINS` (separados por coma). Sin la variable se acepta cualquiera (desarrollo); en el deploy se fija al dominio real desde el panel de la plataforma, sin tocar código.
+- **Origen del WebSocket**: `CORSMiddleware` **no interviene en los WebSocket** —el navegador tampoco aplica la política de mismo origen al abrirlos—, así que `/ws/translate` valida el header `Origin` por su cuenta contra la misma lista (`origen_ws_permitido()` en `backend/app/main.py`) y cierra con código 1008 antes del `accept` si no coincide. Sin ese chequeo, `LSA_CORS_ORIGINS` solo protegería `/health` y `/model/info`, y el endpoint que concentra todo el cómputo quedaría abierto a cualquier página: en la capa gratuita, eso es la cuota de CPU consumida por un tercero. Un `Origin` ausente se acepta, porque ninguna página puede omitirlo y es lo que mandan los clientes que no son navegadores; contra esos, ni CORS ni esta validación sirven.
 
 ## 9. Experimentos sugeridos para la tesina
 

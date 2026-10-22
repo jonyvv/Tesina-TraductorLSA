@@ -47,6 +47,48 @@ RUTA_MODELO = Path(
 )
 UMBRAL_CONFIANZA = 0.6
 
+
+def origenes_permitidos(valor: str | None) -> list[str]:
+    """Orígenes que acepta CORS, a partir de `LSA_CORS_ORIGINS`.
+
+    Sin la variable (desarrollo local) se acepta cualquier origen. En el deploy
+    hay que fijarla al dominio real, separando varios con coma:
+        LSA_CORS_ORIGINS=https://traductor-lsa.onrender.com
+    Se configura por entorno y no en el código porque el dominio no se conoce
+    hasta crear el servicio, y cambiarlo no debería requerir un commit.
+
+    Nota: cuando el frontend lo sirve este mismo backend (el caso del
+    Dockerfile), el navegador no hace pedidos cross-origin y CORS no interviene;
+    la restricción importa si alguien sirve el frontend desde otro dominio o
+    para que otro sitio no pueda usar la API.
+    """
+    if not valor or not valor.strip():
+        return ["*"]
+    return [origen.strip().rstrip("/") for origen in valor.split(",") if origen.strip()]
+
+
+def origen_ws_permitido(origen: str | None, permitidos: list[str]) -> bool:
+    """Si una conexión WebSocket con ese header `Origin` puede aceptarse.
+
+    Hace falta porque **CORS no protege los WebSocket**: `CORSMiddleware` solo
+    interviene en pedidos HTTP, y el navegador tampoco aplica la política de
+    mismo origen al abrir un WebSocket. Sin este chequeo, `LSA_CORS_ORIGINS`
+    restringe `/health` y `/model/info` —que no hacen nada interesante— mientras
+    `/ws/translate`, que es todo el sistema, queda abierto a cualquier página.
+    En la capa gratuita eso es, además, CPU ajena consumiendo la cuota.
+
+    Un `Origin` ausente se acepta: ninguna página web puede omitirlo, así que
+    permitirlo no debilita la protección contra otros sitios, y es lo que
+    mandan los clientes que no son navegadores (los tests, un script de prueba).
+    Contra esos, ni CORS ni esto sirven de nada: quien controla el cliente
+    controla el header.
+    """
+    if "*" in permitidos:
+        return True
+    if origen is None:
+        return True
+    return origen.strip().rstrip("/") in permitidos
+
 # --- Construcción de dependencias (equivalente al "carga modelo" del diagrama) ---
 # Nota: tanto `Preprocesador` (requiere el archivo hand_landmarker.task, ver
 # common/download_model.py) como `ModeloLSE` (requiere el .joblib entrenado)
@@ -102,11 +144,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Traductor LSA API", version="0.1.0", lifespan=lifespan)
 
-# En desarrollo, permitir cualquier origen. En producción, restringir al dominio
-# real del frontend (ver docs/ARQUITECTURA.md, sección Deploy).
+ORIGENES_PERMITIDOS = origenes_permitidos(os.getenv("LSA_CORS_ORIGINS"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ORIGENES_PERMITIDOS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -145,6 +187,13 @@ def model_info() -> dict:
 
 @app.websocket("/ws/translate")
 async def ws_translate(ws: WebSocket) -> None:
+    if not origen_ws_permitido(ws.headers.get("origin"), ORIGENES_PERMITIDOS):
+        # 1008 = policy violation. Se cierra ANTES del accept, así el handshake
+        # nunca llega a completarse.
+        logger.warning("WebSocket rechazado por origen: %s", ws.headers.get("origin"))
+        await ws.close(code=1008)
+        return
+
     if ws_handler is None:
         # El preprocesador (MediaPipe) no pudo inicializarse -> avisar y cerrar
         # en vez de crashear. Ver /health para diagnosticar qué falta.

@@ -181,9 +181,12 @@ let contadorNotas = 0;
 // --- Texto en línea ----------------------------------------------------------------
 // Soporta **negrita**, *cursiva*, `código`, [texto](url), [^nota] y
 // [[PENDIENTE: ...]] (resaltado amarillo, para lo que falta completar).
+// También [[PENDIENTE (tarea M2 del plan): ...]], que es la forma que usa el
+// capítulo de resultados: con el patrón anterior esos pendientes salían como
+// texto normal, sin resaltar, y podían colarse al documento entregado.
 function runs(texto, base = {}, notasArchivo = {}) {
   const salida = [];
-  const patron = /(\[\[PENDIENTE:[^\]]*\]\])|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|(`[^`]+`)|(\[\^[^\]]+\])|(\[[^\]]+\]\([^)]+\))/g;
+  const patron = /(\[\[PENDIENTE[^:\]]*:[^\]]*\]\])|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|(`[^`]+`)|(\[\^[^\]]+\])|(\[[^\]]+\]\([^)]+\))/g;
   let ultimo = 0;
   let m;
   while ((m = patron.exec(texto)) !== null) {

@@ -24,6 +24,13 @@ CAPS = Path(__file__).resolve().parents[1] / "capitulos"
 BIBLIO = CAPS / "50_bibliografia.md"
 GLOSARIO = CAPS / "51_glosario.md"
 
+# Acepta tanto [[PENDIENTE: ...]] como [[PENDIENTE (tarea M2 del plan): ...]].
+# El capitulo de resultados usa la segunda forma para apuntar a una tarea del
+# plan, y con el patron viejo esos cinco pendientes no se contaban ni se
+# resaltaban: quedaban como texto normal en el Word. build.js tiene que aceptar
+# exactamente lo mismo.
+PENDIENTE = r"\[\[PENDIENTE[^:\]]*:(.*?)\]\]"
+
 
 def sin_acentos(texto: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn").lower()
@@ -97,10 +104,10 @@ def main() -> int:
     print("== Pendientes ==")
     total = 0
     for nombre, texto in textos.items():
-        for p in re.findall(r"\[\[PENDIENTE:(.*?)\]\]", texto, flags=re.S):
+        for p in re.findall(PENDIENTE, texto, flags=re.S):
             total += 1
             print(f"  {nombre}: {p.strip()[:110]}")
-    for p in re.findall(r"\[\[PENDIENTE:(.*?)\]\]", BIBLIO.read_text(encoding="utf-8")):
+    for p in re.findall(PENDIENTE, BIBLIO.read_text(encoding="utf-8"), flags=re.S):
         total += 1
         print(f"  {BIBLIO.name}: {p.strip()[:110]}")
     print(f"  ({total} pendientes)")

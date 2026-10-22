@@ -1,0 +1,419 @@
+{
+  "hipotesis": "la ventaja de la BiLSTM sobre el bosque se concentra en las senas con mas movimiento",
+  "modelo_a": "BiLSTM",
+  "modelo_b": "RandomForest",
+  "cache_movimiento": ".lsa64_cache/features_v2.npz",
+  "n_clases": 64,
+  "recorrido_muneca": {
+    "pearson": {
+      "r": -0.2095944284650318,
+      "p": 0.09646723756798514
+    },
+    "spearman": {
+      "rho": -0.22682176444889063,
+      "p": 0.07148540958669053
+    }
+  },
+  "cambio_configuracion": {
+    "pearson": {
+      "r": -0.14114399191284896,
+      "p": 0.2659329121167053
+    },
+    "spearman": {
+      "rho": -0.1440327372470522,
+      "p": 0.2561724353250152
+    }
+  },
+  "tercios": {
+    "ventaja_media_mas_movimiento": -0.01594761904761905,
+    "ventaja_media_menos_movimiento": 0.03146666666666666,
+    "mann_whitney_p": 0.9437947076723181,
+    "n_por_tercio": 21
+  },
+  "por_clase": {
+    "clase_01": {
+      "glosa": "Opaco",
+      "recorrido_medio": 0.49553356433287266,
+      "cambio_configuracion_medio": 0.29645767457783223,
+      "ventaja_bilstm": -0.08000000000000007
+    },
+    "clase_02": {
+      "glosa": "Rojo",
+      "recorrido_medio": 0.36544578624042595,
+      "cambio_configuracion_medio": 0.4390017000788992,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_03": {
+      "glosa": "Verde",
+      "recorrido_medio": 0.34383817091584207,
+      "cambio_configuracion_medio": 0.6361611280590296,
+      "ventaja_bilstm": -0.050000000000000044
+    },
+    "clase_04": {
+      "glosa": "Amarillo",
+      "recorrido_medio": 0.3061131781153381,
+      "cambio_configuracion_medio": 0.30385780096054077,
+      "ventaja_bilstm": -0.09999999999999998
+    },
+    "clase_05": {
+      "glosa": "Brillante",
+      "recorrido_medio": 0.44818118134164253,
+      "cambio_configuracion_medio": 0.23163008734583854,
+      "ventaja_bilstm": -0.12
+    },
+    "clase_06": {
+      "glosa": "Celeste",
+      "recorrido_medio": 0.11606880040087092,
+      "cambio_configuracion_medio": 0.2958179375109,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_07": {
+      "glosa": "Colores",
+      "recorrido_medio": 0.14606252381023258,
+      "cambio_configuracion_medio": 0.23971494802452148,
+      "ventaja_bilstm": 0.10630000000000006
+    },
+    "clase_08": {
+      "glosa": "Rosa",
+      "recorrido_medio": 0.20409773194357209,
+      "cambio_configuracion_medio": 0.34676110348664224,
+      "ventaja_bilstm": -0.04169999999999996
+    },
+    "clase_09": {
+      "glosa": "Mujer",
+      "recorrido_medio": 0.16301879400594366,
+      "cambio_configuracion_medio": 0.2682467848062515,
+      "ventaja_bilstm": 0.1388999999999999
+    },
+    "clase_10": {
+      "glosa": "Enemigo",
+      "recorrido_medio": 0.12921466598054393,
+      "cambio_configuracion_medio": 0.2884203027933836,
+      "ventaja_bilstm": 0.125
+    },
+    "clase_11": {
+      "glosa": "Hijo",
+      "recorrido_medio": 0.19090001581406052,
+      "cambio_configuracion_medio": 0.31399083662439475,
+      "ventaja_bilstm": -0.022700000000000053
+    },
+    "clase_12": {
+      "glosa": "Hombre",
+      "recorrido_medio": 0.09138931447397107,
+      "cambio_configuracion_medio": 0.2820388451218605,
+      "ventaja_bilstm": 0.04349999999999998
+    },
+    "clase_13": {
+      "glosa": "Lejos",
+      "recorrido_medio": 0.2511926932726055,
+      "cambio_configuracion_medio": 0.2027414120733738,
+      "ventaja_bilstm": 0.09999999999999998
+    },
+    "clase_14": {
+      "glosa": "Cajón",
+      "recorrido_medio": 0.17906470420504256,
+      "cambio_configuracion_medio": 0.2440056526767356,
+      "ventaja_bilstm": 0.17859999999999998
+    },
+    "clase_15": {
+      "glosa": "Nacer",
+      "recorrido_medio": 0.42296751493726065,
+      "cambio_configuracion_medio": 0.5254364085418207,
+      "ventaja_bilstm": 0.03699999999999992
+    },
+    "clase_16": {
+      "glosa": "Aprender",
+      "recorrido_medio": 0.1960715129226446,
+      "cambio_configuracion_medio": 0.2216200977563858,
+      "ventaja_bilstm": 0.020000000000000018
+    },
+    "clase_17": {
+      "glosa": "Llamar",
+      "recorrido_medio": 0.20947299502354036,
+      "cambio_configuracion_medio": 0.3356161712014929,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_18": {
+      "glosa": "Espumadera",
+      "recorrido_medio": 0.49062962022144346,
+      "cambio_configuracion_medio": 0.2992741764336824,
+      "ventaja_bilstm": -0.21999999999999997
+    },
+    "clase_19": {
+      "glosa": "Amargo",
+      "recorrido_medio": 0.5462875460460782,
+      "cambio_configuracion_medio": 0.3138303320854902,
+      "ventaja_bilstm": 0.020000000000000018
+    },
+    "clase_20": {
+      "glosa": "Dulce de leche",
+      "recorrido_medio": 0.23868383886292577,
+      "cambio_configuracion_medio": 0.39927048325538633,
+      "ventaja_bilstm": 0.020000000000000018
+    },
+    "clase_21": {
+      "glosa": "Leche",
+      "recorrido_medio": 0.4152433492837008,
+      "cambio_configuracion_medio": 0.362602394297719,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_22": {
+      "glosa": "Agua",
+      "recorrido_medio": 0.2144722442940942,
+      "cambio_configuracion_medio": 0.3031192703210578,
+      "ventaja_bilstm": 0.04079999999999995
+    },
+    "clase_23": {
+      "glosa": "Comida",
+      "recorrido_medio": 0.37102380376408534,
+      "cambio_configuracion_medio": 0.8190876438123423,
+      "ventaja_bilstm": -0.3659
+    },
+    "clase_24": {
+      "glosa": "Argentina",
+      "recorrido_medio": 0.23450318550225346,
+      "cambio_configuracion_medio": 0.4544172875583172,
+      "ventaja_bilstm": 0.019999999999999907
+    },
+    "clase_25": {
+      "glosa": "Uruguay",
+      "recorrido_medio": 0.31646510048303755,
+      "cambio_configuracion_medio": 0.39462038725614546,
+      "ventaja_bilstm": 0.039999999999999925
+    },
+    "clase_26": {
+      "glosa": "País",
+      "recorrido_medio": 0.35484768472611905,
+      "cambio_configuracion_medio": 0.2790416169166565,
+      "ventaja_bilstm": 0.12
+    },
+    "clase_27": {
+      "glosa": "Apellido",
+      "recorrido_medio": 0.18962385545930135,
+      "cambio_configuracion_medio": 0.8670940460718196,
+      "ventaja_bilstm": -0.02169999999999994
+    },
+    "clase_28": {
+      "glosa": "Dónde",
+      "recorrido_medio": 0.19507465010974556,
+      "cambio_configuracion_medio": 0.2371337566524744,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_29": {
+      "glosa": "Burlarse",
+      "recorrido_medio": 0.11756804823030338,
+      "cambio_configuracion_medio": 0.5643694748481115,
+      "ventaja_bilstm": -0.0741
+    },
+    "clase_30": {
+      "glosa": "Cumpleaños",
+      "recorrido_medio": 0.23460306013779095,
+      "cambio_configuracion_medio": 0.1888154085415105,
+      "ventaja_bilstm": 0.1875
+    },
+    "clase_31": {
+      "glosa": "Desayuno",
+      "recorrido_medio": 0.7463492872565984,
+      "cambio_configuracion_medio": 1.0061234578490257,
+      "ventaja_bilstm": 0.12
+    },
+    "clase_32": {
+      "glosa": "Foto",
+      "recorrido_medio": 0.5673465053645932,
+      "cambio_configuracion_medio": 0.6455393854756745,
+      "ventaja_bilstm": 0.04080000000000006
+    },
+    "clase_33": {
+      "glosa": "Hambre",
+      "recorrido_medio": 0.1484519314217323,
+      "cambio_configuracion_medio": 0.5530720758251846,
+      "ventaja_bilstm": 0.031299999999999994
+    },
+    "clase_34": {
+      "glosa": "Mapa",
+      "recorrido_medio": 0.9803793570026755,
+      "cambio_configuracion_medio": 0.5177041068673134,
+      "ventaja_bilstm": 0.05999999999999994
+    },
+    "clase_35": {
+      "glosa": "Moneda",
+      "recorrido_medio": 0.7521984565851745,
+      "cambio_configuracion_medio": 1.1031539273262023,
+      "ventaja_bilstm": -0.020000000000000018
+    },
+    "clase_36": {
+      "glosa": "Música",
+      "recorrido_medio": 1.2278576241992414,
+      "cambio_configuracion_medio": 0.590604013055563,
+      "ventaja_bilstm": -0.039999999999999925
+    },
+    "clase_37": {
+      "glosa": "Nave",
+      "recorrido_medio": 0.35150363594293593,
+      "cambio_configuracion_medio": 0.36186265870928763,
+      "ventaja_bilstm": 0.040000000000000036
+    },
+    "clase_38": {
+      "glosa": "Ninguno",
+      "recorrido_medio": 0.16646417922107504,
+      "cambio_configuracion_medio": 0.3374380847811699,
+      "ventaja_bilstm": -0.05999999999999994
+    },
+    "clase_39": {
+      "glosa": "Nombre",
+      "recorrido_medio": 0.18420029390717343,
+      "cambio_configuracion_medio": 0.28293827267325655,
+      "ventaja_bilstm": 0.04079999999999995
+    },
+    "clase_40": {
+      "glosa": "Paciencia",
+      "recorrido_medio": 0.10878631571011449,
+      "cambio_configuracion_medio": 0.37298080866987054,
+      "ventaja_bilstm": 0.09089999999999998
+    },
+    "clase_41": {
+      "glosa": "Perfume",
+      "recorrido_medio": 0.12441395574973689,
+      "cambio_configuracion_medio": 0.20566492842303383,
+      "ventaja_bilstm": -0.08890000000000009
+    },
+    "clase_42": {
+      "glosa": "Sordo",
+      "recorrido_medio": 0.24747194970026612,
+      "cambio_configuracion_medio": 0.21318799927830695,
+      "ventaja_bilstm": -0.05999999999999994
+    },
+    "clase_43": {
+      "glosa": "Trampa",
+      "recorrido_medio": 0.346828938156832,
+      "cambio_configuracion_medio": 0.3563214595615864,
+      "ventaja_bilstm": 0.040000000000000036
+    },
+    "clase_44": {
+      "glosa": "Arroz",
+      "recorrido_medio": 0.1978117009421112,
+      "cambio_configuracion_medio": 0.39088187739253044,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_45": {
+      "glosa": "Asado",
+      "recorrido_medio": 0.901197389382869,
+      "cambio_configuracion_medio": 1.6468977802991867,
+      "ventaja_bilstm": -0.14
+    },
+    "clase_46": {
+      "glosa": "Caramelo",
+      "recorrido_medio": 0.2722838423417314,
+      "cambio_configuracion_medio": 0.1658805364175983,
+      "ventaja_bilstm": -0.10869999999999991
+    },
+    "clase_47": {
+      "glosa": "Chicle",
+      "recorrido_medio": 0.33522035585483534,
+      "cambio_configuracion_medio": 0.20696140848100186,
+      "ventaja_bilstm": 0.14
+    },
+    "clase_48": {
+      "glosa": "Fideos",
+      "recorrido_medio": 0.6193004085368011,
+      "cambio_configuracion_medio": 0.5108114379644394,
+      "ventaja_bilstm": -0.17999999999999994
+    },
+    "clase_49": {
+      "glosa": "Yogur",
+      "recorrido_medio": 0.6912823502440005,
+      "cambio_configuracion_medio": 0.7328219996392726,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_50": {
+      "glosa": "Aceptar",
+      "recorrido_medio": 0.25748832685834105,
+      "cambio_configuracion_medio": 0.7060430585406721,
+      "ventaja_bilstm": 0.3125
+    },
+    "clase_51": {
+      "glosa": "Agradecer",
+      "recorrido_medio": 0.4630242425245138,
+      "cambio_configuracion_medio": 0.5122457865853699,
+      "ventaja_bilstm": -0.14279999999999993
+    },
+    "clase_52": {
+      "glosa": "Apagar",
+      "recorrido_medio": 0.20232859431067482,
+      "cambio_configuracion_medio": 0.30648239988833664,
+      "ventaja_bilstm": 0.4
+    },
+    "clase_53": {
+      "glosa": "Aparecer",
+      "recorrido_medio": 0.44965023239358115,
+      "cambio_configuracion_medio": 1.1764104383496137,
+      "ventaja_bilstm": 0.17950000000000005
+    },
+    "clase_54": {
+      "glosa": "Aterrizar",
+      "recorrido_medio": 0.41775295242870925,
+      "cambio_configuracion_medio": 0.39837070055305956,
+      "ventaja_bilstm": 0.12
+    },
+    "clase_55": {
+      "glosa": "Atrapar",
+      "recorrido_medio": 0.5252682675840333,
+      "cambio_configuracion_medio": 0.751853776872158,
+      "ventaja_bilstm": 0.24
+    },
+    "clase_56": {
+      "glosa": "Ayudar",
+      "recorrido_medio": 0.49017352450321966,
+      "cambio_configuracion_medio": 0.4395650680711929,
+      "ventaja_bilstm": -0.06390000000000007
+    },
+    "clase_57": {
+      "glosa": "Bailar",
+      "recorrido_medio": 0.19153787566157168,
+      "cambio_configuracion_medio": 0.6562943905591965,
+      "ventaja_bilstm": 0.02939999999999998
+    },
+    "clase_58": {
+      "glosa": "Bañarse",
+      "recorrido_medio": 1.7232278669698837,
+      "cambio_configuracion_medio": 1.2342946058178836,
+      "ventaja_bilstm": -0.06390000000000007
+    },
+    "clase_59": {
+      "glosa": "Comprar",
+      "recorrido_medio": 0.14308087506409115,
+      "cambio_configuracion_medio": 0.26149729344372946,
+      "ventaja_bilstm": 0.0
+    },
+    "clase_60": {
+      "glosa": "Copiar",
+      "recorrido_medio": 0.2374840546923224,
+      "cambio_configuracion_medio": 0.26884549111127853,
+      "ventaja_bilstm": 0.17500000000000004
+    },
+    "clase_61": {
+      "glosa": "Correr",
+      "recorrido_medio": 0.4118723963358801,
+      "cambio_configuracion_medio": 0.9450150664363589,
+      "ventaja_bilstm": -0.0816
+    },
+    "clase_62": {
+      "glosa": "Darse cuenta",
+      "recorrido_medio": 0.08764691092073917,
+      "cambio_configuracion_medio": 0.41889843986979847,
+      "ventaja_bilstm": 0.10349999999999993
+    },
+    "clase_63": {
+      "glosa": "Dar",
+      "recorrido_medio": 0.31879641448125934,
+      "cambio_configuracion_medio": 0.414664262255957,
+      "ventaja_bilstm": -0.06979999999999997
+    },
+    "clase_64": {
+      "glosa": "Encontrar",
+      "recorrido_medio": 0.20149581047706305,
+      "cambio_configuracion_medio": 0.536925063431263,
+      "ventaja_bilstm": 0.020000000000000018
+    }
+  }
+}
