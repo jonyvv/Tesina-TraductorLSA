@@ -42,3 +42,6 @@ backend/models/_sweep.*
 
 # Mantener estructura de carpetas vacías en git
 !**/.gitkeep
+
+.claude 
+.agents
