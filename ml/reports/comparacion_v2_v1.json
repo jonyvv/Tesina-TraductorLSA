@@ -1,0 +1,105 @@
+{
+  "modelo_a": "BiLSTM-v2",
+  "modelo_b": "BiLSTM-v1",
+  "media_a": 0.8336168160354299,
+  "media_b": 0.8100971140074898,
+  "desvio_a": 0.0716367211792785,
+  "desvio_b": 0.06132382760209481,
+  "diferencia_media": 0.02351970202794007,
+  "por_sujeto": {
+    "sujeto_01": {
+      "BiLSTM-v2": 0.8636,
+      "BiLSTM-v1": 0.8566,
+      "diferencia": 0.007
+    },
+    "sujeto_02": {
+      "BiLSTM-v2": 0.8333,
+      "BiLSTM-v1": 0.8235,
+      "diferencia": 0.0098
+    },
+    "sujeto_03": {
+      "BiLSTM-v2": 0.6667,
+      "BiLSTM-v1": 0.7128,
+      "diferencia": -0.0461
+    },
+    "sujeto_04": {
+      "BiLSTM-v2": 0.862,
+      "BiLSTM-v1": 0.8148,
+      "diferencia": 0.0471
+    },
+    "sujeto_05": {
+      "BiLSTM-v2": 0.8516,
+      "BiLSTM-v1": 0.8594,
+      "diferencia": -0.0078
+    },
+    "sujeto_06": {
+      "BiLSTM-v2": 0.875,
+      "BiLSTM-v1": 0.7838,
+      "diferencia": 0.0912
+    },
+    "sujeto_07": {
+      "BiLSTM-v2": 0.9178,
+      "BiLSTM-v1": 0.8947,
+      "diferencia": 0.023
+    },
+    "sujeto_08": {
+      "BiLSTM-v2": 0.7625,
+      "BiLSTM-v1": 0.705,
+      "diferencia": 0.0575
+    },
+    "sujeto_09": {
+      "BiLSTM-v2": 0.8816,
+      "BiLSTM-v1": 0.8355,
+      "diferencia": 0.0461
+    },
+    "sujeto_10": {
+      "BiLSTM-v2": 0.8222,
+      "BiLSTM-v1": 0.8148,
+      "diferencia": 0.0074
+    }
+  },
+  "sujetos_gana_a": 8,
+  "sujetos_gana_b": 2,
+  "diferencia_media_pareada": 0.02351970202794006,
+  "diferencia_desvio_pareada": 0.03851507720979618,
+  "wilcoxon": {
+    "estadistico": 10.0,
+    "p_valor": 0.083984375,
+    "n": 10
+  },
+  "mcnemar": {
+    "aciertan_ambos": 2191,
+    "falla_ambos": 340,
+    "acierta_solo_BiLSTM-v2": 200,
+    "acierta_solo_BiLSTM-v1": 131,
+    "n_discordantes": 331,
+    "p_valor": 0.00017682609071657161,
+    "predicciones_identicas": 2381,
+    "proporcion_predicciones_identicas": 0.8319
+  },
+  "clases_donde_gana_a": {
+    "clase_41": 0.2,
+    "clase_14": 0.1786,
+    "clase_12": 0.1739,
+    "clase_19": 0.14,
+    "clase_07": 0.1277,
+    "clase_10": 0.125,
+    "clase_50": 0.125,
+    "clase_61": 0.1224
+  },
+  "clases_donde_gana_b": {
+    "clase_49": -0.12,
+    "clase_47": -0.1,
+    "clase_37": -0.08,
+    "clase_15": -0.0741,
+    "clase_30": -0.0625,
+    "clase_21": -0.06,
+    "clase_60": -0.05,
+    "clase_40": -0.0454
+  },
+  "n_clases_gana_a": 32,
+  "n_clases_gana_b": 21,
+  "n_clases_empate": 11,
+  "reporte_a": "ml\\reports\\loso_v2_gpu.json",
+  "reporte_b": "ml\\reports\\loso_ref_gpu.json"
+}

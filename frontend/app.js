@@ -17,8 +17,44 @@
      Configuración
      ====================================================================== */
 
-  const WS_URL =
-    (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/translate";
+  const CLAVE_BACKEND = "lsa-backend";
+  const BACKEND = resolverBackend();
+  const WS_URL = BACKEND.replace(/^http/, "ws") + "/ws/translate";
+
+  // ngrok gratuito interpone una página de advertencia en los pedidos de
+  // navegador: sin este header el fetch recibe HTML en vez del JSON.
+  const CABECERAS_API = { "ngrok-skip-browser-warning": "1" };
+
+  /**
+   * Origen del backend, por orden de prioridad: `?backend=` en la URL (que
+   * queda guardado), el último usado, config.js, o el mismo origen que sirve
+   * la página. El parámetro existe porque la URL de ngrok cambia en cada
+   * arranque y así no hay que volver a desplegar el frontend.
+   */
+  function resolverBackend() {
+    const desdeUrl = new URLSearchParams(location.search).get("backend");
+    if (desdeUrl) guardarBackend(desdeUrl);
+    const origen = desdeUrl || leerBackendGuardado() || window.LSA_CONFIG?.backend;
+    if (!origen) return location.origin;
+    const conProtocolo = /^https?:\/\//.test(origen) ? origen : `https://${origen}`;
+    return conProtocolo.replace(/\/$/, "");
+  }
+
+  function guardarBackend(url) {
+    try {
+      localStorage.setItem(CLAVE_BACKEND, url);
+    } catch {
+      /* modo privado o almacenamiento bloqueado: se usa solo en esta sesión */
+    }
+  }
+
+  function leerBackendGuardado() {
+    try {
+      return localStorage.getItem(CLAVE_BACKEND);
+    } catch {
+      return null;
+    }
+  }
 
   const ANCHO_ENVIO = 480;         // ancho del frame que se manda (px)
   const CALIDAD_JPEG = 0.7;
@@ -483,7 +519,7 @@
     // backend: se pide en vez de duplicarlo acá, para que no pueda quedar
     // desincronizado si alguna vez cambia (misma razón por la que existe common/).
     try {
-      const respuesta = await fetch("/model/info");
+      const respuesta = await fetch(`${BACKEND}/model/info`, { headers: CABECERAS_API });
       if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
       const info = await respuesta.json();
       conexionesMano = info.conexiones_mano || [];

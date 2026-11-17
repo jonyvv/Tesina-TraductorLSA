@@ -33,6 +33,7 @@ lsa-traductor/
 │   ├── evaluate_loso.py            # validación leave-one-subject-out
 │   ├── baseline_rf.py              # línea base Random Forest (mismo protocolo)
 │   ├── comparar_modelos.py         # comparación pareada entre dos reportes LOSO
+│   ├── analizar_movimiento.py      # movimiento por clase vs. ventaja de la red
 │   ├── lsa64/                      # implementación de LSA64 (cache, folds, fit)
 │   ├── tests/                      # tests de splits, cache y entrenamiento
 │   ├── reports/                    # matrices de confusión y reportes .json
@@ -45,13 +46,19 @@ lsa-traductor/
 │   ├── test_features.py
 │   ├── test_modelo_lse.py
 │   ├── test_traductor_service.py
+│   ├── test_cors.py
 │   └── test_backend_e2e.py
 ├── data/
 │   └── sign_language_dataset/  # muestras capturadas (JSON)
 ├── Dockerfile                # imagen del backend (sirve también el frontend)
 ├── requirements-dev.txt      # dependencias para correr los tests
+├── anteproyecto-v2.docx      # anteproyecto actualizado al estado real del proyecto
 └── docs/
-    └── ARQUITECTURA.md       # documento de arquitectura formal
+    ├── ARQUITECTURA.md       # documento de arquitectura formal
+    ├── PROXIMOS_PASOS.md     # resultados, experimentos y qué falta
+    ├── GUIA_DE_ESTUDIO.md    # por dónde empezar a entender el proyecto
+    ├── CAMBIOS_LSA64.md      # historia del módulo LSA64
+    └── tesina/               # el documento de la tesina (capítulos, figuras, build)
 ```
 
 ## Cómo correrlo (desarrollo local)
@@ -178,8 +185,25 @@ persona, así que sirven para armar la matriz de confusión del dataset entero.
 **LOSO no guarda modelos**: es un protocolo de medición, no produce un `.pt` para
 servir. El modelo que se sirve sale de `ml/train_lsa64.py`.
 
-Última medición registrada (18/10/2026): **81,7 % ± 7,9 %** signer-independent, con dropout 0,4 y descarte aleatorio de cuadros 0,30 (`ml/reports/loso_do40_fd30.json`). La configuración de referencia, sin regularización, daba 79,8 % ± 8,9 %.
-El análisis de ese número está en `docs/PROXIMOS_PASOS.md`.
+Mediciones registradas con el protocolo completo de 10 folds:
+
+| Configuración | Accuracy signer-independent | Reporte |
+|---|---|---|
+| Referencia (sin flags) | 79,8 % ± 8,9 % | `ml/reports/loso_lsa64.json` |
+| **Regularizada** (`--dropout 0.4 --aug-frame-drop 0.30`) | **81,7 % ± 7,9 %** | `ml/reports/loso_do40_fd30.json` |
+| La misma, reproducida en otra máquina con GPU | 81,0 % ± 6,1 % | `ml/reports/loso_ref_gpu.json` |
+| Representación v2 (`--con-posicion`), regularizada | **83,4 % ± 7,2 %** | `ml/reports/loso_v2_gpu.json` |
+| v2 + ruido 0,01 y escala temporal 0,2 | 81,7 % ± 8,6 % | `ml/reports/loso_v2_aug_gpu.json` |
+| v1 + ruido 0,01 y escala temporal 0,2 | 79,5 % ± 8,0 % | `ml/reports/loso_v1_aug_gpu.json` |
+
+La **regularizada** es la configuración con la que se entrenó el modelo que sirve el
+backend (ver "Regularización" más abajo) y la que informa la tesina. El análisis de los
+números está en `docs/PROXIMOS_PASOS.md`.
+
+> **v2 todavía no está adoptada.** Da el mejor número de la tabla y gana en 8 de los 10
+> sujetos, pero falta decidir si pasa a ser el resultado principal: implica reentrenar el
+> modelo servido y reescribir las secciones 14.6.2 y 14.6.3 de la tesina, donde v2 figura
+> como variante descartada por el screening de dos folds.
 
 #### Línea base no neuronal (Random Forest)
 
@@ -207,6 +231,45 @@ El bosque se entrena con los mismos 8 sujetos que la red: el sujeto de validaci�
 queda afuera aunque el bosque no lo necesite, porque entrenarlo con 9 mediría el
 tamaño del conjunto y no el modelo. Con `--incluir-val` se puede ver esa variante.
 
+#### Regularización: la configuración que se sirve
+
+El modelo sobreajusta (el loss de train baja a 0,12 mientras la validación se estanca).
+Dos técnicas contra eso dieron mejora confirmada con el protocolo completo:
+
+```bash
+# Medir (≈55 min): entrena los 10 folds con la configuración regularizada.
+python ml/evaluate_loso.py --dropout 0.4 --aug-frame-drop 0.30 \
+    --output ml/reports/loso_do40_fd30.json
+
+# Comparar contra la referencia, de forma pareada.
+python ml/comparar_modelos.py --a ml/reports/loso_do40_fd30.json \
+    --b ml/reports/loso_lsa64.json --nombre-a Regularizada --nombre-b Baseline \
+    --output ml/reports/comparacion_regularizacion.json
+
+# Entrenar el modelo que sirve el backend con esa configuración.
+python ml/train_lsa64.py --labels-map ml/lsa64_labels.json \
+    --dropout 0.4 --aug-frame-drop 0.30
+```
+
+Resultado (18/10/2026): **81,7 % ± 7,9 %** contra 79,8 % ± 8,9 %. Lo que importa no es
+solo el +1,9: a diferencia del experimento de la grilla temporal, **no nivela para
+abajo**. El piso sube de 63,1 % a 66,7 %, el techo de 89,5 % a 91,8 % y el desvío baja
+de 8,9 a 7,9. Los dos sujetos más difíciles ganan 3,5 y 4,2 puntos, que era el objetivo:
+`--aug-frame-drop` simula durante el entrenamiento a la persona cuyas manos se detectan
+mal, que es el caso en que el modelo falla.
+
+McNemar sobre las 2862 predicciones da p = 0,004; Wilcoxon sobre los 10 sujetos, p = 0,13
+(6 mejoras, 3 empeoramientos, 1 empate). Con n=10 la prueba por sujeto no alcanza, así
+que se reportan las dos.
+
+Todos los flags de regularización están apagados por default, así que **una corrida sin
+argumentos sigue midiendo el baseline**, que es lo que hace que la comparación valga.
+La reproducción es exacta dentro de la misma máquina, pero no entre máquinas: la
+configuración regularizada dio 81,7 % ± 7,9 % en CPU y 81,0 % ± 6,1 % al repetirla en
+otra con GPU (`ml/reports/loso_ref_gpu.json`), y la persona con peor resultado pasa de
+S03 a S08. Es no-determinismo de cuDNN: la comparación entre configuraciones sigue
+valiendo, pero sólo si las dos corridas salen de la misma máquina.
+
 Esto deja `backend/models/modelo_lse.joblib` listo para que lo cargue el backend.
 
 Si vas a usar LSA64, el flujo recomendado es organizar los videos por clase o
@@ -228,6 +291,11 @@ necesitás instalar `torch` en el entorno del backend.
 ~1,5 MB) y su resumen `.json` **sí** están en git: quien clone el repo puede levantar el
 backend sin reentrenar. Los `.joblib` y el caché `.lsa64_cache/` (~33 MB por archivo)
 no se versionan; el caché se regenera con la etapa 1.
+
+El `.pt` que está hoy en el repo salió de `--dropout 0.4 --aug-frame-drop 0.30` y da
+83,95 % sobre el split único de referencia (el anterior, sin regularización, daba
+81,25 %). Ese número arrastra la variabilidad del split único: el resultado defendible
+es el LOSO.
 
 ### 2. Backend
 
@@ -278,6 +346,19 @@ que definirla con el dominio real:
 docker run --rm -p 8000:8000 -e LSA_CORS_ORIGINS=https://traductor-lsa.onrender.com traductor-lsa
 ```
 
+Esa variable gobierna **dos** controles, no uno. `CORSMiddleware` solo interviene en
+pedidos HTTP, y el navegador tampoco aplica la política de mismo origen al abrir un
+WebSocket: si la restricción estuviera solo en el middleware, quedarían protegidos
+`/health` y `/model/info` mientras `/ws/translate` —que es todo el cómputo— seguiría
+abierto a cualquier página. Por eso el endpoint del WebSocket valida el header `Origin`
+por su cuenta (`origen_ws_permitido()` en `backend/app/main.py`) y cierra con código 1008
+antes del `accept` si no coincide.
+
+Un `Origin` ausente se acepta a propósito: ninguna página web puede omitirlo, así que
+permitirlo no debilita la protección contra otros sitios, y es lo que mandan los clientes
+que no son navegadores. Contra un script, ni CORS ni esto sirven —quien controla el
+cliente controla el header—; para eso haría falta autenticación.
+
 La imagen instala PyTorch desde el índice de ruedas CPU: la versión por defecto
 trae ~2,5 GB de CUDA que el contenedor no usa.
 
@@ -285,17 +366,22 @@ trae ~2,5 GB de CUDA que el contenedor no usa.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -v
+pytest tests/ ml/tests/ -v
 ```
 
-Cubren el módulo de features (invarianza a traslación/escala, slots estables por
-mano), la carga y validación de modelos, y el suavizado temporal con aislamiento
-entre conexiones. Buena parte son **regresiones** de bugs reales encontrados en
-el proyecto — cada test de ese tipo está marcado con `REGRESIÓN` en su docstring
-y explica qué fallaba antes.
+**132 tests, ninguno salteado.** Cubren el módulo de features (invarianza a
+traslación/escala, slots estables por mano), la carga y validación de modelos, el
+suavizado temporal con aislamiento entre conexiones, el pipeline de LSA64 (splits, caché,
+augmentation, línea base) y los orígenes permitidos. Buena parte son **regresiones** de
+bugs reales encontrados en el proyecto — cada test de ese tipo está marcado con
+`REGRESIÓN` en su docstring y explica qué fallaba antes.
 
-No requieren cámara, ni MediaPipe, ni un modelo entrenado: usan dobles de prueba
-y datos sintéticos.
+Casi ninguno requiere cámara, MediaPipe ni un modelo entrenado: usan dobles de prueba y
+datos sintéticos. Los nueve de `tests/test_backend_e2e.py` son la excepción —hacen el
+round-trip real por WebSocket— y se saltean solos si falta `hand_landmarker.task` o si no
+está instalado `httpx2` ni `httpx`. **Si ves tests salteados, miralos**: durante un tiempo
+esos nueve no corrieron en ninguna máquina porque el guard pedía un paquete que no estaba,
+y nadie se enteró de que el backend no se probaba de punta a punta.
 
 ## Estado actual / qué falta
 
@@ -313,8 +399,13 @@ y datos sintéticos.
 - [x] Entrenamiento completo sobre LSA64, validado con leave-one-subject-out (10 folds, accuracy por sujeto y por clase). Ver `docs/PROXIMOS_PASOS.md`.
 - [x] **Modelo dinámico (BiLSTM) servido en producción**: `ModeloLSE` delega en un adaptador según la extensión (`.joblib`/`.pt`) y `SesionTraduccion` acumula la ventana temporal por conexión.
 - [x] **Línea base no neuronal sobre LSA64** (`ml/baseline_rf.py`): Random Forest con el mismo protocolo LOSO, 78,2 % ± 7,5 % contra 79,8 % ± 8,9 % de la BiLSTM, con comparación pareada (`ml/comparar_modelos.py`).
+- [x] **Regularización validada con LOSO completo**: `--dropout 0.4 --aug-frame-drop 0.30` da 81,7 % ± 7,9 %, subiendo el piso y bajando la dispersión. Es la configuración del modelo que se sirve.
+- [x] **Documento de la tesina** (`docs/tesina/`): 119 páginas en Markdown por capítulo, con figuras generadas desde los reportes y build a Word/PDF. Ver `docs/tesina/PLAN.md` para las tareas y decisiones abiertas.
+- [ ] **Promover el resultado principal a 81,7 %** en la tesina y el anteproyecto, si la configuración regularizada queda como definitiva (sección 14.6.3).
 - [ ] **Dataset propio real.** Sigue pendiente para las señas estáticas: hace falta capturar cada seña en **al menos 2 sesiones distintas** (idealmente con más de un sujeto). Con una sola sesión por seña, el split agrupado deja clases enteras fuera del entrenamiento y las métricas no significan nada — `ml/train.py` ahora lo detecta y aborta con un mensaje explicando el problema.
-- [ ] Deploy efectivo en Render/Railway/GCP (la imagen está lista; falta publicarla y restringir CORS).
+- [ ] **Cerrar la brecha con el tiempo real**: el modelo se entrenó con señas completas a 30 fps y en la app recibe ventanas de 8 frames a 8 fps. Ningún número del LOSO dice cómo anda en vivo.
+- [ ] **Recuperar secuencias descartadas**: MediaPipe no detecta manos en el 24–42 % de los frames según la persona, y esa retención es lo que más explica la variación entre sujetos (r = 0,68). Probar `min_hand_detection_confidence` más bajo y `RunningMode.VIDEO`.
+- [ ] Deploy efectivo en Render/Railway/GCP (la imagen está lista y CORS ya es configurable; falta publicarla).
 - [ ] Validación de usabilidad con usuarios reales de LSA.
 
 **Nota sobre MediaPipe:** el prototipo de escritorio original usaba
