@@ -38,7 +38,7 @@ Este control tiene también una consecuencia metodológica. Sin él, la latencia
 
 ### 12.2.2 Reconexión
 
-Si la conexión WebSocket se interrumpe —por un corte de red o un reinicio del servidor, frecuente en las capas gratuitas—, el cliente intenta reconectarse automáticamente con **espera exponencial**: 0,5 segundos, luego 1, 2, 4 y hasta un máximo de 8 segundos entre intentos. Así se recupera rápido de cortes breves sin saturar al servidor con intentos durante una caída prolongada. El indicador de estado del encabezado informa en todo momento si el cliente está conectado, conectando o desconectado.
+Si la conexión WebSocket se interrumpe —por un corte de red, por una caída del túnel que expone el servicio o por un reinicio del servidor—, el cliente intenta reconectarse automáticamente con **espera exponencial**: 0,5 segundos, luego 1, 2, 4 y hasta un máximo de 8 segundos entre intentos. Así se recupera rápido de cortes breves sin saturar al servidor con intentos durante una caída prolongada. El indicador de estado del encabezado informa en todo momento si el cliente está conectado, conectando o desconectado.
 
 ## 12.3 Presentación de los resultados
 

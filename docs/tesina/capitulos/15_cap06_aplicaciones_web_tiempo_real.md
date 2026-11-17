@@ -61,7 +61,11 @@ Una aplicación de aprendizaje automático depende de muchas bibliotecas con ver
 
 ### 6.6.2 Plataformas como servicio y capa gratuita
 
-Las **plataformas como servicio** (PaaS), como Render, Railway o Google Cloud Run, ejecutan contenedores sin que el desarrollador administre servidores. Varias ofrecen una **capa gratuita** con restricciones típicas: poca memoria y CPU compartida, suspensión del servicio tras un período de inactividad —con un arranque lento en la siguiente solicitud— y un número limitado de servicios. Desplegar dentro de esas restricciones, como exige el anteproyecto, obliga a tomar decisiones concretas: servir el cliente y la API desde un único servicio, mantener la imagen liviana y no descargar recursos al arrancar (sección 13.4).
+Las **plataformas como servicio** (PaaS), como Render, Railway o Google Cloud Run, ejecutan contenedores sin que el desarrollador administre servidores. Varias ofrecen una **capa gratuita** con restricciones típicas: poca memoria y CPU compartida, suspensión del servicio tras un período de inactividad —con un arranque lento en la siguiente solicitud— y un número limitado de servicios. La sección 13.4 explica por qué, para un servicio que ejecuta MediaPipe y PyTorch en cada cuadro, esas restricciones terminaron pesando más que la comodidad de la plataforma.
+
+### 6.6.3 Alojamiento estático y túneles
+
+Otra forma de publicar sin costo es separar la aplicación según lo que cada mitad necesita. Los archivos de un cliente web sin marco de trabajo no requieren cómputo y pueden publicarse como **sitio estático** en una **red de distribución de contenidos** (CDN), que los entrega por HTTPS; Vercel ofrece ese servicio sin costo para proyectos personales (Vercel Inc., s.f.). La mitad que sí necesita cómputo puede quedarse en un equipo propio y publicarse mediante un **túnel**: un programa que abre una conexión saliente hacia un servicio intermediario y recibe por ella el tráfico dirigido a una dirección pública, con certificado TLS —condición para acceder a la cámara (sección 6.4)— y sin abrir puertos en el router (ngrok Inc., s.f.).
 
 ## 6.7 Accesibilidad web
 

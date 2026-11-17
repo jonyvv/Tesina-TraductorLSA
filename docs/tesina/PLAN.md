@@ -11,6 +11,13 @@ _Armado el 30/9/2026 a la noche, junto con el primer borrador completo del docum
 >
 > Además: el anteproyecto aprobado se corrigió en forma, guía y redacción sin cambiar el plan (`docs/anteproyecto/`), y los pendientes del texto ya no remiten a los códigos de este plan, porque el documento lo lee el profesor. `verificar.py` los sigue listando.
 
+> **Actualización 17/11/2026.** Se alineó la tesina con el anteproyecto v3 (`anteproyecto-v3.docx`), que cambió dos definiciones del proyecto:
+> - **D1 abecedario: sale del alcance.** El anteproyecto v3 lo pone en limitaciones ("no incluye el abecedario"). La tesina lo movió de alcances a limitaciones; RF-08 pasa a "fuera del alcance"; la sección 9.8 conserva el pipeline como herramienta documentada y el abecedario queda en "Futuro del proyecto".
+> - **Deploy: ya no es capa gratuita.** El esquema es interfaz estática + backend local expuesto con un túnel. Se reescribieron el objetivo específico 5, los alcances y limitaciones, la justificación de 5.3, la sección 6.6.2, la nueva 6.6.3, RNF-05, 8.8.1, 8.8.2, 13.2, 13.3, 13.4, la conclusión 5 y el cronograma del Anexo D.
+> - **D4 roles:** el v3 ya trae el reparto real, así que la tesina (7.2) dejó de decir que es inverso al del anteproyecto.
+> - **Los huecos del documento y las decisiones abiertas se siguen en `PENDIENTES.md`**, agrupados por la acción que los cierra. Las tareas por persona de la sección 4 de este archivo quedaron desactualizadas; vale como historia del plan y por los hallazgos de la revisión del código.
+> - Pendiente de decidir: el documento quedó en **121 páginas** (el rango pedido es 90–120) y el título difiere del del anteproyecto. Las mediciones con *features* v2 (83,4 % ± 7,2 %) todavía no están en el documento, porque el modelo servido sigue en v1.
+
 Este archivo tiene tres partes: qué quedó hecho, qué decisiones tienen que tomar ustedes antes de seguir, y las tareas concretas separadas por persona. Los códigos (D1, F3, M2…) son los mismos que aparecen resaltados en amarillo como `PENDIENTE` dentro del documento, así cada hueco del texto apunta a una tarea de acá.
 
 ---

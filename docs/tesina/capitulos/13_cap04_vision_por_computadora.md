@@ -22,7 +22,7 @@ Un modelo previo, entrenado sobre grandes volúmenes de datos para una tarea gen
 
 Para este proyecto, el enfoque basado en el esqueleto ofrece ventajas decisivas:
 
-- **Compacidad.** Un cuadro se reduce de seis millones de valores a unas decenas de coordenadas, lo que permite entrenar un clasificador pequeño, en segundos y sin GPU.
+- **Compacidad.** Un cuadro se reduce de seis millones de valores a unas decenas de coordenadas, lo que permite entrenar un clasificador pequeño, en pocos minutos y sin GPU.
 - **Invarianza a factores irrelevantes.** El fondo, la ropa, la iluminación y el color de piel quedan absorbidos por el detector, que ya fue entrenado para ignorarlos. El clasificador trabaja sólo con la geometría.
 - **Transferencia.** El detector fue entrenado con cientos de miles de imágenes de manos que ningún proyecto académico podría reunir. Su conocimiento se reutiliza sin costo.
 - **Privacidad y ancho de banda.** Las coordenadas no permiten reconstruir la imagen de la persona, y ocupan una fracción mínima del tamaño de un cuadro.

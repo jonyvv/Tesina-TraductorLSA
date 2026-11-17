@@ -1,6 +1,6 @@
 # Capítulo 13 — Aseguramiento de la calidad y despliegue
 
-Este capítulo describe las pruebas automatizadas del sistema, las consideraciones de seguridad y privacidad, y el empaquetado del sistema para su despliegue en una plataforma en la nube.
+Este capítulo describe las pruebas automatizadas del sistema, las consideraciones de seguridad y privacidad, y el empaquetado del sistema y el esquema con el que se publica en internet.
 
 ## 13.1 Pruebas automatizadas
 
@@ -47,8 +47,8 @@ Las pruebas verifican la lógica del sistema, pero no la calidad del reconocimie
 - **Sin almacenamiento de video.** Los cuadros recibidos se decodifican, se procesan en memoria y se descartan. El servidor no guarda imágenes ni secuencias de los usuarios (requisito RNF-06).
 - **Usuario sin privilegios.** El contenedor ejecuta la aplicación con un usuario sin privilegios de administrador, de modo que una eventual vulnerabilidad en una dependencia tenga un alcance limitado.
 - **Carga de modelos.** El formato de PyTorch permite, en general, ejecutar código arbitrario al cargar un archivo de pesos. El backend sólo carga el modelo versionado en el propio repositorio, generado por los scripts del proyecto, y nunca archivos provistos por los usuarios.
-- **Orígenes permitidos (CORS).** Durante el desarrollo, el servidor acepta solicitudes de cualquier origen. Para la versión desplegada se restringe al dominio de la aplicación mediante la variable de entorno `LSA_CORS_ORIGINS`, que se configura en el panel de la plataforma sin modificar el código. La restricción se aplica en dos lugares, porque el middleware de CORS **no interviene en las conexiones WebSocket**: el navegador no aplica la política de mismo origen al abrirlas, de modo que el punto de acceso `/ws/translate` —donde ocurre todo el procesamiento— valida por su cuenta el encabezado `Origin` y rechaza la conexión antes de aceptarla si no coincide. Sin esa segunda validación, la restricción sólo alcanzaría a los puntos de acceso informativos y cualquier sitio podría consumir el modelo desde el navegador de sus visitantes, con el costo de cómputo que eso implica en una capa gratuita.
-- **HTTPS.** Los navegadores sólo permiten el acceso a la cámara en contextos seguros (sección 6.4), por lo que la versión publicada debe servirse con HTTPS. Las plataformas en la nube consideradas proveen certificados de forma automática.
+- **Orígenes permitidos (CORS).** Durante el desarrollo, el servidor acepta solicitudes de cualquier origen. Para la versión desplegada se restringe al dominio de la aplicación mediante la variable de entorno `LSA_CORS_ORIGINS`, que se configura en el entorno del servicio sin modificar el código. La restricción se aplica en dos lugares, porque el middleware de CORS **no interviene en las conexiones WebSocket**: el navegador no aplica la política de mismo origen al abrirlas, de modo que el punto de acceso `/ws/translate` —donde ocurre todo el procesamiento— valida por su cuenta el encabezado `Origin` y rechaza la conexión antes de aceptarla si no coincide. Sin esa segunda validación, la restricción sólo alcanzaría a los puntos de acceso informativos y cualquier sitio podría consumir el modelo desde el navegador de sus visitantes, con el costo de cómputo que eso implica para el único equipo que lo sirve.
+- **HTTPS.** Los navegadores sólo permiten el acceso a la cámara en contextos seguros (sección 6.4). Tanto el alojamiento estático de la interfaz como el túnel que expone el servicio proveen certificados válidos de forma automática (sección 6.6.3).
 
 ## 13.3 Contenedor
 
@@ -56,19 +56,21 @@ El sistema se empaqueta en una única imagen de Docker, definida en el `Dockerfi
 
 - **Imagen base liviana** (`python:3.12-slim`), con sólo la biblioteca de sistema que MediaPipe requiere. Se utiliza la versión de OpenCV sin interfaz gráfica, que no necesita las bibliotecas de ventanas.
 - **Dependencias en una capa propia.** El archivo de dependencias se copia e instala antes que el código. Docker reutiliza esa capa mientras las dependencias no cambien, de modo que modificar el código no obliga a reinstalar MediaPipe y PyTorch en cada construcción.
-- **Modelo de MediaPipe descargado durante la construcción.** Si se descargara al arrancar, cada despliegue —y cada reinicio del contenedor, que en las capas gratuitas ocurre con frecuencia por inactividad— dependería de que el servidor de Google sea accesible desde la plataforma. Descargándolo en la construcción, la imagen queda autocontenida.
+- **Modelo de MediaPipe descargado durante la construcción.** Si se descargara al arrancar, cada despliegue y cada reinicio del contenedor dependerían de que el servidor de Google sea accesible en ese momento. Descargándolo en la construcción, la imagen queda autocontenida.
 - **Modelo entrenado incluido en la imagen.** El modelo se versiona junto con el código y se copia a la imagen; nunca se entrena en producción.
-- **Puerto configurable.** Las plataformas como Render y Railway indican el puerto en la variable de entorno `PORT`; el contenedor la respeta y usa el 8000 en forma local.
+- **Puerto configurable.** El contenedor respeta la variable de entorno `PORT` y usa el 8000 en forma local, que es el que se expone a través del túnel.
 
 ### 13.3.1 Tamaño de la imagen
 
-PyTorch es necesario para servir la BiLSTM, pero la distribución por defecto incluye las bibliotecas de CUDA para GPU, que ocupan varios gigabytes y no se usan: la inferencia de una ventana de cuadros por vez se resuelve en CPU en pocos milisegundos. La distribución sólo para CPU ocupa una fracción de ese tamaño. Usarla es importante para la capa gratuita, que limita el espacio y penaliza los tiempos de arranque de imágenes grandes. [[PENDIENTE: la instalación de PyTorch para CPU está implementada en la rama `mejoras/despliegue`; resta integrarla y registrar aquí el tamaño final de la imagen.]]
+PyTorch es necesario para servir la BiLSTM, pero la distribución por defecto incluye las bibliotecas de CUDA para GPU, que ocupan varios gigabytes y no se usan: la inferencia de una ventana de cuadros por vez se resuelve en CPU en pocos milisegundos. El `Dockerfile` instala la distribución sólo para CPU, desde el índice de paquetes correspondiente, antes que el resto de las dependencias, lo que reduce varios gigabytes la imagen y acorta su construcción y su arranque. [[PENDIENTE: construir la imagen y registrar acá su tamaño final.]]
 
 ## 13.4 Despliegue
 
-El anteproyecto establece que el despliegue debe mantenerse dentro de la capa gratuita de una plataforma en la nube. El diseño del sistema contempla esa restricción en varios puntos: un único servicio para la API y el cliente, que ocupa un solo lugar de los que permite la capa gratuita; una imagen autocontenida; un servicio de estado para los controles de salud de la plataforma; y un cliente que se reconecta solo cuando el servicio se reinicia.
+El requisito de costo (RNF-05) es publicar el sistema sin costo de infraestructura. La primera opción fue desplegar la imagen completa en la capa gratuita de una plataforma como servicio (sección 6.6.2), y se descartó por dos razones: el entorno de inferencia, aun con PyTorch para CPU, deja una imagen cercana a los límites de espacio de esas capas; y la suspensión por inactividad obliga a recargar el modelo y el detector al volver, de modo que la primera seña de cada sesión paga un arranque en frío, justamente cuando se la necesita.
 
-La principal limitación esperable es la capacidad de cómputo. Cada cuadro de cada usuario requiere ejecutar MediaPipe en el servidor, y la CPU compartida de una capa gratuita puede atender a pocos usuarios simultáneos con latencias aceptables. La alternativa de trasladar la detección al cliente (sección 8.8.1) es la vía para escalar si fuera necesario.
+El esquema adoptado separa las dos mitades (sección 6.6.3): la interfaz web se publica como sitio estático servido por HTTPS, y el servicio de inferencia —el contenedor de la sección 13.3— se ejecuta en una computadora de los autores, expuesto mediante un túnel con certificado TLS. El cliente puede apuntar a ese dominio porque la dirección del servicio se toma, en ese orden, del parámetro `backend` de la página, de la que el usuario haya guardado en el navegador o del archivo `config.js` que acompaña a la interfaz publicada; sin ninguna de las tres se usa el mismo origen que sirvió la página, que es el caso del desarrollo local. Como la capa gratuita de ngrok asigna a cada cuenta un dominio fijo, que no cambia al reiniciar el túnel, esa dirección se configura una sola vez.
 
-[[PENDIENTE: despliegue todavía no realizado. Se documentarán aquí la plataforma elegida, la dirección pública, los pasos seguidos, el tiempo de arranque en frío y la latencia medida desde el navegador contra el servidor publicado.]]
+A cambio, la disponibilidad queda atada a esa computadora y al túnel, la capa gratuita del túnel limita el tráfico mensual y los usuarios simultáneos están limitados, porque cada cuadro de cada conexión ejecuta MediaPipe: trasladar la detección al cliente (sección 8.8.1) es la vía para escalar.
+
+[[PENDIENTE: despliegue todavía no realizado. Se documentarán acá la dirección pública de la interfaz, los pasos seguidos y la latencia medida desde el navegador contra el servicio expuesto por el túnel.]]
 

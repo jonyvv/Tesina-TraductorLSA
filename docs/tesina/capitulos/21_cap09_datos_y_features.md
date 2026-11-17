@@ -79,7 +79,9 @@ El episodio muestra un límite de la estrategia del módulo compartido: evita la
 
 Para el reconocimiento de configuraciones estáticas se desarrolló un script de captura (`ml/capture_dataset.py`) que abre la cámara, detecta las manos y guarda cada muestra como un archivo JSON con su vector de características y sus metadatos: etiqueta, persona, sesión y condición de iluminación. El script de entrenamiento correspondiente (`ml/train.py`) agrupa las muestras por sesión al dividirlas, de modo que todas las muestras de una misma sesión de captura queden del mismo lado, y aborta con un mensaje explicativo si alguna clase tiene una única sesión, porque en ese caso el reparto dejaría clases enteras fuera del entrenamiento.
 
-Como prueba de concepto se capturaron 120 muestras de dos letras (A y C), en dos sesiones, realizadas por uno de los autores. Esta cantidad permite verificar que el pipeline funciona de punta a punta, pero no constituye un conjunto de datos del que puedan extraerse conclusiones. [[PENDIENTE: en desarrollo; resta capturar el abecedario completo con varias personas y sesiones, con consentimiento informado, y reportar sus resultados en el Capítulo 14.]]
+Como prueba de concepto se capturaron 120 muestras de dos letras (A y C), en dos sesiones, realizadas por uno de los autores. Esta cantidad permite verificar que el pipeline funciona de punta a punta, pero no constituye un conjunto de datos del que puedan extraerse conclusiones.
+
+El reconocimiento del alfabeto quedó fuera del alcance: LSA64 no contiene letras, y grabar un conjunto propio con varias personas y sesiones no cabía en el tiempo disponible. Queda documentada la herramienta para quien retome esa línea.
 
 ## 9.9 Extracción en dos etapas
 

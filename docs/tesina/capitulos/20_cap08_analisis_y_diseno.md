@@ -17,7 +17,7 @@ Tabla: Requisitos funcionales del sistema. {#tab:rf}
 | RF-05 | Dibujar el esqueleto de las manos detectadas sobre el video, con opción a ocultarlo | Implementado |
 | RF-06 | Permitir ajustar la frecuencia de envío de cuadros | Implementado |
 | RF-07 | Informar al usuario el estado de la conexión y reconectar automáticamente si se interrumpe | Implementado |
-| RF-08 | Reconocer configuraciones manuales estáticas (alfabeto manual) | Parcial: pipeline implementado, datos pendientes |
+| RF-08 | Reconocer configuraciones manuales estáticas (alfabeto manual) | Fuera del alcance: pipeline implementado, sin datos |
 | RF-09 | Exponer el estado del servicio y la información del modelo cargado | Implementado |
 
 ## 8.2 Requisitos no funcionales
@@ -30,7 +30,7 @@ Tabla: Requisitos no funcionales del sistema. {#tab:rnf}
 | RNF-02 | Exactitud | El desempeño del modelo debe medirse sobre personas no vistas en el entrenamiento |
 | RNF-03 | Portabilidad | El cliente debe funcionar en navegadores modernos de escritorio y móviles, sin instalación |
 | RNF-04 | Accesibilidad | La interfaz debe cumplir los criterios de nivel AA de WCAG 2.2 aplicables |
-| RNF-05 | Costo | El despliegue debe funcionar dentro de la capa gratuita de una plataforma en la nube |
+| RNF-05 | Costo | El sistema debe poder publicarse en internet sin costo de infraestructura |
 | RNF-06 | Privacidad | El video de los usuarios no debe almacenarse |
 | RNF-07 | Concurrencia | Usuarios simultáneos no deben interferir entre sí en sus resultados |
 | RNF-08 | Mantenibilidad | El preprocesamiento debe estar definido en un único lugar para entrenamiento e inferencia |
@@ -119,17 +119,17 @@ Tabla: Detección de manos en el servidor frente a detección en el cliente. {#t
 | Cómputo del servidor | Alto: MediaPipe por cada cuadro de cada usuario | Bajo: sólo la red neuronal |
 | Requisitos del dispositivo | Mínimos | Debe ejecutar MediaPipe con fluidez |
 | Garantía de preprocesamiento idéntico | Total: el mismo código Python que en el entrenamiento | Requiere una segunda implementación en JavaScript |
-| Adecuación a la capa gratuita | Limitada: pocos usuarios simultáneos | Mejor |
+| Usuarios simultáneos | Limitados por la CPU del servidor | Mejor: el cómputo se reparte entre los clientes |
 
 Se eligió la detección en el servidor porque garantiza que el preprocesamiento sea idéntico al del entrenamiento —el requisito RNF-08—, que es la fuente de errores más grave identificada en el proyecto. La alternativa es más eficiente y escalable, pero duplicaría la extracción de características en dos lenguajes, precisamente lo que el módulo compartido busca evitar. Queda como mejora futura, condicionada a una verificación automática de que ambas implementaciones producen los mismos vectores.
 
 ### 8.8.2 Cliente sin marco de trabajo
 
-El anteproyecto preveía desarrollar el cliente con React. Durante el diseño se optó por HTML, CSS y JavaScript sin marco de trabajo, separados en tres archivos por responsabilidad. La interfaz consiste en una única pantalla con un video, un panel de resultados y algunos controles: un marco de trabajo agregaría un proceso de compilación, dependencias y un segundo servidor durante el desarrollo, sin un beneficio proporcional. Además, al no requerir compilación, el backend puede servir los archivos del cliente directamente y todo el sistema se despliega como un único servicio, lo que ahorra recursos en la capa gratuita.
+El anteproyecto preveía desarrollar el cliente con React. Durante el diseño se optó por HTML, CSS y JavaScript sin marco de trabajo, separados en tres archivos por responsabilidad. La interfaz consiste en una única pantalla con un video, un panel de resultados y algunos controles: un marco de trabajo agregaría un proceso de compilación, dependencias y un segundo servidor durante el desarrollo, sin un beneficio proporcional. Además, al no requerir compilación, los archivos del cliente pueden servirse tal como están: el backend los sirve directamente durante el desarrollo, y la versión publicada se copia sin más a un alojamiento estático (sección 13.4).
 
 ### 8.8.3 Otras decisiones
 
 - **PyTorch en lugar de TensorFlow.** El anteproyecto mencionaba ambos. Se usó PyTorch por su soporte directo para secuencias de longitud variable empaquetadas (sección 3.7.1) y porque permite servir el modelo con la versión para CPU de la biblioteca.
 - **Scripts en lugar de cuadernos Jupyter.** El entrenamiento se implementó como scripts de Python con parámetros de línea de comandos, en lugar de cuadernos. Los scripts se versionan mejor, se prueban con pytest y se ejecutan de forma reproducible, requisitos que surgieron al detectar los problemas de reproducibilidad de la sección 10.4.
-- **Entrenamiento local en lugar de Google Colab.** La red tiene menos de 300 000 parámetros y se entrena en segundos en una CPU. El paso costoso es la extracción de landmarks con MediaPipe, que corre en CPU y se paraleliza por procesos: con los 8 núcleos de un equipo de escritorio tarda unos 47 minutos, mientras que en la capa gratuita de Colab, con dos núcleos virtuales, tardaría varias horas. Una GPU no acelera este paso.
+- **Entrenamiento local en lugar de Google Colab.** La red tiene menos de 300 000 parámetros y cada modelo se entrena en pocos minutos en una CPU. El paso costoso es la extracción de landmarks con MediaPipe, que corre en CPU y se paraleliza por procesos: con los 8 núcleos de un equipo de escritorio tarda entre 39 y 47 minutos según el equipo, mientras que en la capa gratuita de Colab, con dos núcleos virtuales, tardaría varias horas. Una GPU no acelera ese paso, y con una red de este tamaño tampoco acorta en forma apreciable el entrenamiento: sobre una misma partición, con la misma semilla y las mismas 45 épocas, tardó 184 segundos en CPU y 173 en GPU.
 

@@ -25,7 +25,7 @@ El trabajo se organizó en dos frentes, cada uno con un responsable principal:
 - **Modelo de reconocimiento** (Jonatan Videla): preparación de los datos de LSA64, extracción de características, entrenamiento de la red, validación leave-one-subject-out y experimentos de mejora.
 - **Aplicación** (Leandro Provenzano): arquitectura del sistema, backend de inferencia, cliente web, accesibilidad, pruebas automatizadas, contenedor de despliegue y documentación.
 
-En la práctica, esta división resultó inversa a la prevista en la sección de recursos humanos del anteproyecto, que asignaba la red neuronal a Leandro Provenzano y la aplicación web a Jonatan Videla, y se mantuvo así durante todo el proyecto.
+Esta división se definió al comenzar el desarrollo, es la que figura en la sección de recursos humanos del anteproyecto y se mantuvo sin cambios durante todo el proyecto.
 
 Ambos frentes compartían un punto de contacto crítico: el módulo de extracción de características, que debe producir exactamente los mismos vectores durante el entrenamiento y durante el uso. Ese módulo se diseñó desde el comienzo como código compartido entre los dos frentes (sección 8.5), y su contrato se documentó en el propio código.
 

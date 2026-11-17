@@ -26,9 +26,9 @@ Desarrollar una aplicación web basada en inteligencia artificial que permita la
 2. Entrenar una red neuronal sobre un conjunto de datos de LSA, con un preprocesamiento idéntico en el entrenamiento y en la inferencia.
 3. Evaluar el modelo mediante un protocolo independiente del sujeto (que mida el desempeño sobre personas no vistas durante el entrenamiento) y analizar sus errores.
 4. Desarrollar la aplicación web que capture video en tiempo real, se comunique con el modelo y presente la traducción de forma accesible.
-5. Desplegar el sistema en una plataforma en la nube dentro de los límites de una capa gratuita.
+5. Desplegar el sistema en internet sin costo de infraestructura, de modo que resulte accesible desde un navegador.
 
-El anteproyecto preveía medir la exactitud del modelo sobre datos no utilizados en el entrenamiento. El tercer objetivo amplía esa medición a un protocolo independiente del sujeto y se incorporó durante el desarrollo, al comprobar que las mediciones de exactitud obtenidas con un único reparto de los datos variaban varios puntos según qué personas quedaban en el conjunto de prueba (ver la sección 14.1). Sin una evaluación rigurosa, ninguna cifra de desempeño del modelo podía sostenerse.
+El tercer objetivo se incorporó durante el desarrollo. La formulación inicial preveía medir la exactitud sobre datos no utilizados en el entrenamiento, sin precisar cómo repartirlos; al comprobar que un único reparto daba cifras que variaban varios puntos según qué personas quedaban en el conjunto de prueba (ver la sección 14.1), se adoptó un protocolo independiente del sujeto y se agregó la comparación contra una línea base no neuronal.
 
 ## Alcances y limitaciones
 
@@ -36,8 +36,7 @@ El anteproyecto preveía medir la exactitud del modelo sobre datos no utilizados
 
 - Aplicación web con traducción en tiempo real desde la cámara del dispositivo, utilizable desde computadoras y dispositivos móviles con navegador moderno.
 - Reconocimiento de las 64 señas aisladas del conjunto LSA64 (Ronchetti et al., 2016b), que incluyen colores, alimentos, verbos y sustantivos de uso cotidiano (ver el Anexo A).
-- Reconocimiento del abecedario de la LSA (alfabeto manual), con un pipeline propio de captura y entrenamiento de configuraciones manuales estáticas. [[PENDIENTE: en desarrollo. El pipeline está implementado y probado con dos letras (sección 9.8); resta capturar y evaluar el abecedario completo.]]
-- Despliegue del sistema como un único servicio en contenedor.
+- Despliegue del sistema en internet: la interfaz web como sitio estático y el servicio de inferencia expuesto mediante un túnel, ambos sin costo (sección 13.4).
 
 ### Limitaciones
 
@@ -45,13 +44,14 @@ El anteproyecto preveía medir la exactitud del modelo sobre datos no utilizados
 - El vocabulario está restringido a las señas presentes en los datos de entrenamiento.
 - Los resultados cuantitativos se midieron sobre LSA64, grabado en condiciones controladas (fondo uniforme, iluminación constante, vestimenta oscura). El desempeño con cámaras web domésticas y en entornos reales puede ser menor.
 - El reconocimiento requiere buena iluminación y que la persona esté de frente a la cámara, con las manos dentro del encuadre.
-- El despliegue debe mantenerse dentro de los límites de la capa gratuita de servicios en la nube, lo que restringe la cantidad de usuarios simultáneos.
+- El vocabulario no incluye el abecedario de la LSA, que LSA64 no contiene: el pipeline de captura quedó implementado y probado con dos letras, pero capturarlo y evaluarlo completo quedó fuera del alcance (sección 9.8).
+- El servicio de inferencia corre en un equipo propio expuesto mediante un túnel: el sistema está disponible mientras ese equipo esté encendido, la capa gratuita del túnel limita el tráfico mensual y los usuarios simultáneos están limitados por ese único equipo (sección 13.4).
 
 ## Justificación
 
 El proyecto responde a una necesidad concreta de inclusión. Una herramienta de traducción automática, aun con un vocabulario limitado, puede facilitar interacciones breves y frecuentes —saludos, consultas, indicaciones— y reducir la dependencia de terceros en situaciones donde no hay intérprete disponible. No pretende reemplazar a los intérpretes humanos, cuya tarea abarca dimensiones lingüísticas y culturales que ningún sistema actual reproduce, sino complementar su labor.
 
-Desde el punto de vista disciplinar, el trabajo integra áreas centrales de la Licenciatura en Sistemas de Información: análisis y diseño de sistemas, desarrollo de aplicaciones web, arquitectura cliente-servidor, aprendizaje automático, pruebas de software y despliegue en la nube. Además, el proyecto aporta un antecedente local poco frecuente: la evaluación independiente del sujeto de un modelo para LSA integrado en una aplicación funcional, con el código y los resultados documentados de forma reproducible.
+Desde el punto de vista disciplinar, el trabajo integra áreas centrales de la Licenciatura en Sistemas de Información: análisis y diseño de sistemas, desarrollo de aplicaciones web, arquitectura cliente-servidor, aprendizaje automático, pruebas de software y publicación de un servicio en internet. Además, el proyecto aporta un antecedente local poco frecuente: la evaluación independiente del sujeto de un modelo para LSA integrado en una aplicación funcional, con el código y los resultados documentados de forma reproducible.
 
 ## Metodología de trabajo
 

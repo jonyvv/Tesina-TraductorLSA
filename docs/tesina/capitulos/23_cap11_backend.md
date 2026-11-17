@@ -24,7 +24,7 @@ En un repositorio recién clonado pueden faltar el archivo de pesos de MediaPipe
 
 El backend expone dos servicios HTTP y un canal WebSocket. FastAPI genera automáticamente su documentación navegable, que muestra la @fig:swagger.
 
-- `GET /health`: estado del servicio. Informa si el preprocesador y el modelo están listos, qué modelo está cargado, sus clases, y si el sistema está en condiciones de traducir. Es el servicio que consultan las plataformas en la nube para saber si el contenedor está sano.
+- `GET /health`: estado del servicio. Informa si el preprocesador y el modelo están listos, qué modelo está cargado, sus clases, y si el sistema está en condiciones de traducir. Permite comprobar desde afuera si el contenedor está sano, y es el punto que consultan las plataformas que alojan contenedores para decidirlo automáticamente.
 - `GET /model/info`: información que el cliente necesita para funcionar: las clases, el umbral de confianza, la versión de las características, si el modelo requiere una secuencia de cuadros y de qué longitud, y las conexiones del esqueleto de la mano para dibujarlo. El esqueleto se sirve desde el backend, en lugar de estar escrito también en el JavaScript, por la misma razón por la que existe el módulo compartido: una única definición, sin copias que puedan quedar desactualizadas.
 - `WS /ws/translate`: el canal de traducción, descripto a continuación.
 

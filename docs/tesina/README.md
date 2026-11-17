@@ -4,7 +4,8 @@ El texto de la tesina vive en Markdown, un archivo por capítulo, y se convierte
 
 ```
 docs/tesina/
-├── PLAN.md              # decisiones pendientes y tareas por persona
+├── PLAN.md              # historia del plan, decisiones y hallazgos de la revisión
+├── PENDIENTES.md        # qué falta completar en el documento, agrupado por la acción que lo cierra
 ├── capitulos/           # el texto: 00_ a 51_, en el orden del documento
 ├── figuras/             # PNG + generar_figuras.py (las figuras de resultados salen de ml/reports/)
 ├── build/

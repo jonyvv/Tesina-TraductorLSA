@@ -56,6 +56,8 @@ Mozilla. (s.f.). *MediaDevices: getUserMedia() method*. MDN Web Docs. Recuperado
 
 Naciones Unidas. (2006). *Convención sobre los derechos de las personas con discapacidad*. https://www.un.org/esa/socdev/enable/documents/tccconvs.pdf
 
+ngrok Inc. (s.f.). *ngrok documentation*. Recuperado el 17 de noviembre de 2026, de https://ngrok.com/docs
+
 Organización Mundial de la Salud. (2021). *World report on hearing*. https://www.who.int/publications/i/item/9789240020481
 
 Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., Killeen, T., Lin, Z., Gimelshein, N., Antiga, L., Desmaison, A., Köpf, A., Yang, E., DeVito, Z., Raison, M., Tejani, A., Chilamkurthy, S., Steiner, B., Fang, L., … Chintala, S. (2019). PyTorch: An imperative style, high-performance deep learning library. En *Advances in Neural Information Processing Systems 32* (pp. 8024–8035).
@@ -89,6 +91,8 @@ Stokoe, W. C. (1960). *Sign language structure: An outline of the visual communi
 Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., y Paluri, M. (2018). A closer look at spatiotemporal convolutions for action recognition. En *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)* (pp. 6450–6459).
 
 Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., y Polosukhin, I. (2017). Attention is all you need. En *Advances in Neural Information Processing Systems 30* (pp. 5998–6008).
+
+Vercel Inc. (s.f.). *Vercel documentation*. Recuperado el 17 de noviembre de 2026, de https://vercel.com/docs
 
 World Wide Web Consortium. (2023). *Web Content Accessibility Guidelines (WCAG) 2.2*. W3C Recommendation. https://www.w3.org/TR/WCAG22/
 

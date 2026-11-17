@@ -61,7 +61,7 @@ El trabajo de Marais et al. (2022) es el antecedente más directamente relaciona
 
 ### 5.3.3 Akdag y Baykan (2024)
 
-Akdag y Baykan (2024) reportaron 98,53 % de exactitud independiente del sujeto sobre LSA64, con una red convolucional 3D que combina bloques residuales y convoluciones espaciotemporales separadas, operando sobre el video completo y fusionando distintas características. Es el mejor resultado independiente del sujeto encontrado, y muestra que el techo del problema es alto. El costo es un modelo pesado sobre video crudo, que requiere una GPU para la inferencia y no es compatible con una aplicación web en la capa gratuita de un servicio en la nube, que es una restricción explícita de este proyecto.
+Akdag y Baykan (2024) reportaron 98,53 % de exactitud independiente del sujeto sobre LSA64, con una red convolucional 3D que combina bloques residuales y convoluciones espaciotemporales separadas, operando sobre el video completo y fusionando distintas características. Es el mejor resultado independiente del sujeto encontrado, y muestra que el techo del problema es alto. El costo es un modelo pesado sobre video crudo, que requiere una GPU dedicada para la inferencia. Este proyecto se propuso, en cambio, un sistema que responda en tiempo real sobre la CPU de un equipo de uso corriente y que pueda publicarse sin costo de infraestructura (sección 13.4), lo que descarta ese tipo de arquitectura.
 
 ### 5.3.4 Posicionamiento del resultado propio
 
