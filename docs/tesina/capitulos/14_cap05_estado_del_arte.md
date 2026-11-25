@@ -14,7 +14,7 @@ La distinción importa para dimensionar correctamente el alcance del sistema: re
 
 ## 5.2 Conjuntos de datos
 
-El progreso del área está ligado a la disponibilidad de conjuntos de datos públicos, cuya construcción es costosa: requiere grabar a muchas personas, cada una realizando muchas señas, y etiquetar cada video. La @tab:datasets resume los conjuntos más relevantes para este trabajo.
+El progreso del área depende de conjuntos de datos públicos, costosos de construir. La @tab:datasets resume los conjuntos más relevantes para este trabajo.
 
 Tabla: Conjuntos de datos de lengua de señas relevantes para el trabajo. {#tab:datasets}
 
@@ -33,7 +33,7 @@ LSA64 es el conjunto utilizado para entrenar y evaluar el modelo de señas de es
 
 ### 5.2.2 LSA16
 
-**LSA16**, del mismo grupo de investigación, contiene 800 imágenes de 16 configuraciones manuales de la LSA realizadas por 10 personas (Ronchetti et al., 2016a). Las configuraciones manuales son las formas básicas que adopta la mano y se relacionan con las letras del alfabeto manual, aunque no son lo mismo: 16 configuraciones no cubren el abecedario. Se menciona aquí porque es la alternativa pública más cercana para el reconocimiento de configuraciones estáticas, un alcance todavía en definición en este proyecto (ver el Capítulo 8).
+**LSA16**, del mismo grupo de investigación, contiene 800 imágenes de 16 configuraciones manuales de la LSA realizadas por 10 personas (Ronchetti et al., 2016a). Las configuraciones manuales son las formas básicas que adopta la mano y se relacionan con las letras del alfabeto manual, aunque no son lo mismo: 16 configuraciones no cubren el abecedario. Se menciona aquí porque es la alternativa pública más cercana para el reconocimiento de configuraciones estáticas, un alcance que quedó fuera de este trabajo (sección 9.8).
 
 ## 5.3 Antecedentes sobre LSA64
 
@@ -53,28 +53,28 @@ Tabla: Resultados publicados sobre LSA64 según el protocolo de evaluación. {#t
 
 La tesina de licenciatura de Mindlin (2021), dirigida por Franco Ronchetti en la Universidad Nacional de La Plata, entrenó modelos convolucionales 3D, convolucionales recurrentes y recurrentes sobre LSA64, con distintos preprocesamientos del video, y alcanzó un 99,4 % de exactitud con el mejor de ellos. Es el antecedente que se citó en el anteproyecto de este trabajo.
 
-Al revisar su metodología se constató un dato que el anteproyecto omitía: la evaluación se realizó con validación cruzada de 5 particiones armadas tomando videos al azar de cada clase, y el propio autor aclara que "esta separación no es independiente del sujeto". Es decir, las personas de la prueba también estaban en el entrenamiento. El 99,4 % mide, por lo tanto, la capacidad de reconocer señas de personas conocidas, y no es comparable con el resultado de esta tesina, que mide el desempeño sobre personas nuevas. El mismo trabajo concluye que LSA64 "no representa un desafío para el estado del arte" bajo ese protocolo, y propone como trabajo futuro el uso de datos con desafíos del mundo real.
+Al revisar su metodología se constató un dato que el anteproyecto omitía: la evaluación se realizó con validación cruzada de 5 particiones armadas tomando videos al azar de cada clase, y el propio autor aclara que esa separación no es independiente del sujeto. Es decir, las personas de la prueba también estaban en el entrenamiento. El 99,4 % mide, por lo tanto, la capacidad de reconocer señas de personas conocidas, y no es comparable con el resultado de esta tesina, que mide el desempeño sobre personas nuevas. El mismo trabajo concluye que, bajo ese protocolo, LSA64 ya no plantea un desafío para los modelos actuales, y propone como trabajo futuro el uso de datos con condiciones de grabación más cercanas al mundo real.
 
 ### 5.3.2 Marais et al. (2022)
 
-El trabajo de Marais et al. (2022) es el antecedente más directamente relacionado con el problema de evaluación. Con una misma arquitectura —una red convolucional InceptionV3 para extraer características de cada cuadro seguida de una red recurrente GRU—, compararon ambos protocolos sobre LSA64: 97,03 % dependiente del sujeto frente a 74,22 % independiente del sujeto. La caída de más de 20 puntos, con el mismo modelo y los mismos datos, cuantifica la magnitud del optimismo que introduce mezclar personas entre entrenamiento y prueba.
+El trabajo de Marais et al. (2022) es el antecedente más directamente relacionado con el problema de evaluación. Con una misma arquitectura —una red convolucional InceptionV3 para extraer características de cada cuadro seguida de una red recurrente GRU—, compararon ambos protocolos sobre LSA64: 97,03 % dependiente del sujeto frente a 74,22 % independiente del sujeto. La caída de más de 20 puntos mide el optimismo que introduce mezclar personas entre entrenamiento y prueba.
 
 ### 5.3.3 Akdag y Baykan (2024)
 
-Akdag y Baykan (2024) reportaron 98,53 % de exactitud independiente del sujeto sobre LSA64, con una red convolucional 3D que combina bloques residuales y convoluciones espaciotemporales separadas, operando sobre el video completo y fusionando distintas características. Es el mejor resultado independiente del sujeto encontrado, y muestra que el techo del problema es alto. El costo es un modelo pesado sobre video crudo, que requiere una GPU dedicada para la inferencia. Este proyecto se propuso, en cambio, un sistema que responda en tiempo real sobre la CPU de un equipo de uso corriente y que pueda publicarse sin costo de infraestructura (sección 13.4), lo que descarta ese tipo de arquitectura.
+Akdag y Baykan (2024) reportaron 98,53 % de exactitud independiente del sujeto sobre LSA64, con una red convolucional 3D que combina bloques residuales y convoluciones espaciotemporales separadas, operando sobre el video completo y fusionando distintas características. Es el mejor resultado independiente del sujeto encontrado. El costo es un modelo convolucional 3D sobre el video completo, cuyo cómputo por cuadro es muy superior al de un clasificador sobre landmarks. Este proyecto se propuso, en cambio, un sistema que responda en tiempo real sobre la CPU de un equipo de uso corriente y que pueda publicarse sin costo de infraestructura (sección 13.4), lo que descarta ese tipo de arquitectura.
 
 ### 5.3.4 Posicionamiento del resultado propio
 
-El resultado de esta tesina, 81,7 % ± 7,9 %, se ubica por encima del resultado independiente del sujeto de Marais et al. (2022) y claramente por debajo del de Akdag y Baykan (2024). La diferencia con este último se explica principalmente por la representación de entrada: el modelo propio no ve la imagen, sino sólo la geometría de las manos que entrega MediaPipe, y pierde la información de los cuadros donde el detector falla (sección 14.5). A cambio, el modelo tiene 290 880 parámetros, se entrena en segundos sobre CPU y permite la inferencia en tiempo real en un servidor modesto. La elección no es la de mayor exactitud posible, sino la de mejor equilibrio entre exactitud y viabilidad para el objetivo de una aplicación web accesible.
+El resultado de esta tesina, 81,7 % ± 7,9 %, se ubica por encima del resultado independiente del sujeto de Marais et al. (2022) y claramente por debajo del de Akdag y Baykan (2024). La diferencia con este último se explica principalmente por la representación de entrada: el modelo propio no ve la imagen, sino sólo la geometría de las manos que entrega MediaPipe, y pierde la información de los cuadros donde el detector falla (sección 14.5). A cambio, el modelo tiene 290 880 parámetros, se entrena en pocos minutos sobre CPU y permite la inferencia en tiempo real en un servidor modesto. Se priorizó el equilibrio entre exactitud y viabilidad para una aplicación web accesible.
 
 ## 5.4 Aplicaciones existentes
 
-Fuera del ámbito académico existen aplicaciones de reconocimiento de lengua de señas, en su mayoría para la Lengua de Señas Americana y basadas en el alfabeto manual, y diversas aplicaciones para el aprendizaje de la LSA que funcionan como diccionarios. En la revisión realizada para el anteproyecto no se encontraron aplicaciones accesibles desde el navegador que reconozcan señas de la LSA en tiempo real a partir de la cámara del dispositivo. Los trabajos académicos sobre LSA64 revisados se limitan a experimentos de laboratorio sin una interfaz de uso.
+Fuera del ámbito académico hay aplicaciones de reconocimiento de señas, casi todas para la Lengua de Señas Americana y el alfabeto manual, y diccionarios para aprender LSA. En la revisión hecha para el anteproyecto no se encontraron aplicaciones web que reconozcan señas de la LSA en tiempo real con la cámara del dispositivo.
 
 ## 5.5 Brecha que aborda el trabajo
 
-A partir de la revisión, se identifica la siguiente brecha: los trabajos existentes sobre LSA reportan resultados de clasificación sobre videos pregrabados, muchas veces con protocolos dependientes del sujeto, y no integran el modelo en un sistema utilizable. Esta tesina aporta:
+Los trabajos sobre LSA revisados reportan resultados de clasificación sobre videos pregrabados, muchas veces con protocolos dependientes del sujeto, y no integran el modelo en un sistema utilizable. Esta tesina aporta:
 
 1. Un modelo para las 64 señas de LSA64 evaluado con un protocolo independiente del sujeto (LOSO), con análisis por persona y por clase.
-2. La integración de ese modelo en una aplicación web en tiempo real, que funciona con la cámara del dispositivo y está diseñada para ejecutarse en infraestructura gratuita.
-3. La documentación, con evidencia, de los errores metodológicos que producen resultados optimistas en este tipo de sistemas y de cómo detectarlos.
+2. La integración de ese modelo en una aplicación web en tiempo real que usa la cámara del dispositivo.
+3. La documentación de los errores metodológicos que inflan los resultados y de cómo detectarlos.

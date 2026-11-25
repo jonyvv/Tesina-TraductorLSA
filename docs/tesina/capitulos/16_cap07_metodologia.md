@@ -8,15 +8,14 @@ El proyecto combinaba dos frentes con incertidumbre alta: un modelo de aprendiza
 
 ### 7.1.1 Scrum adaptado
 
-El marco elegido fue **Scrum** (Schwaber y Sutherland, 2020), adaptado a un equipo de dos personas. Scrum organiza el trabajo en iteraciones de duración fija llamadas **sprints**, cada una con un objetivo y un incremento verificable, y define eventos de planificación, revisión y retrospectiva. La guía oficial prevé tres roles —dueño del producto, desarrolladores y *Scrum Master*—, que en un equipo de dos no tienen sentido como roles separados. Las adaptaciones fueron:
+El anteproyecto tomó como marco de referencia **Scrum** (Schwaber y Sutherland, 2020), que organiza el trabajo en iteraciones de duración fija llamadas **sprints**, cada una con un objetivo y un incremento verificable, y define eventos de planificación, revisión y retrospectiva. Preveía sprints de dos semanas. En la práctica, con dos personas que trabajaban en paralelo sobre frentes distintos y con tiempos condicionados por el cursado, el ritmo no fue el de un calendario fijo. Lo que se mantuvo de Scrum fue:
 
-- **Sprints de dos semanas**, con una reunión de planificación al inicio y una revisión con retrospectiva al final.
-- **Sin roles formales.** Las decisiones de alcance se tomaron en conjunto, y los profesores coordinador y tutor actuaron como referentes externos en las revisiones de avance.
-- **Integración frecuente** entre los dos frentes de trabajo, para detectar temprano las incompatibilidades entre el modelo y la aplicación.
+- **Iteraciones cerradas por una integración** de los dos frentes, que el historial del repositorio registra el 14 de agosto, el 1 de septiembre, el 18 de octubre y el 17 de noviembre, con una revisión al cierre para decidir qué se mantenía y qué se descartaba.
+- **Sin roles formales.** Los tres roles de la guía (dueño del producto, desarrolladores y *Scrum Master*) no tienen sentido separados en un equipo de dos. Las decisiones de alcance se tomaron en conjunto, y los profesores coordinador y tutor actuaron como referentes externos en las revisiones de avance.
 
 ### 7.1.2 Tablero Kanban
 
-Las tareas se gestionaron en un tablero **Kanban** con tres columnas —por hacer, en progreso y terminado—, que hace visible el estado del trabajo y limita la cantidad de tareas abiertas al mismo tiempo. [[PENDIENTE: indicar la herramienta utilizada para el tablero e incluir una captura.]]
+Las tareas se gestionaron en un tablero **Kanban** en Trello, con tres columnas (por hacer, en progreso y terminado), que hace visible el estado del trabajo y limita la cantidad de tareas abiertas al mismo tiempo. [[PENDIENTE: incluir una captura del tablero de Trello.]]
 
 ## 7.2 División del trabajo
 
@@ -38,18 +37,18 @@ El código se gestionó con **Git** y se alojó en un repositorio de GitHub (Cha
 - `lean`: desarrollo de la aplicación (backend y cliente).
 - `Modulo-LSA64`: desarrollo del pipeline de datos y del modelo sobre LSA64.
 
-Los mensajes de los *commits* siguieron una convención con prefijos que indican el tipo de cambio —`feat` para funcionalidad nueva, `fix` para correcciones, `chore` para mantenimiento—, y se redactaron explicando no sólo qué se cambió sino por qué. Ese historial resultó valioso como registro de las decisiones: varios apartados de este documento, en particular los de la sección 9.7 y el Capítulo 14, se reconstruyeron a partir de él.
+A partir de agosto de 2026, los mensajes de los *commits* siguieron una convención con prefijos que indican el tipo de cambio (`feat` para funcionalidad nueva, `fix` para correcciones, `docs` para documentación, `chore` para mantenimiento) y se redactaron explicando qué se cambió y por qué; los primeros registros del repositorio son anteriores a esa convención. El historial registra el trabajo en pocos *commits* grandes, cada uno al cerrar una etapa, y no cambio por cambio. Aun así, resultó valioso como registro de las decisiones: varios apartados de este documento, en particular los de la sección 9.7 y el Capítulo 14, se reconstruyeron a partir de él.
 
 ## 7.4 Pruebas automatizadas
 
-Desde el inicio se escribieron **pruebas automatizadas** con pytest para los componentes con lógica no trivial: la normalización de las características, la carga y validación de modelos, el suavizado temporal y el pipeline de datos de LSA64. Una práctica que resultó especialmente útil fue escribir una **prueba de regresión** por cada error real encontrado: una prueba que falla con el código defectuoso y pasa con el corregido, documentada con la etiqueta `REGRESIÓN` y una explicación del problema. Así, cada error corregido queda protegido contra su reaparición. El Capítulo 13 describe la suite completa.
+Desde la reorganización del backend y del pipeline de datos, en agosto de 2026, se escribieron **pruebas automatizadas** con pytest para los componentes con lógica no trivial: la normalización de las características, la carga y validación de modelos, el suavizado temporal y el pipeline de datos de LSA64. Una práctica que resultó especialmente útil fue escribir una **prueba de regresión** por cada error real encontrado: una prueba que falla con el código defectuoso y pasa con el corregido, documentada con la etiqueta `REGRESIÓN` y una explicación del problema. Así, cada error corregido queda protegido contra su reaparición. El Capítulo 13 describe la suite completa.
 
 ## 7.5 Rigor experimental
 
 El desarrollo del modelo se trató como un proceso experimental, con prácticas tomadas de la investigación científica:
 
 - **Un protocolo de evaluación fijo.** Todos los resultados que se informan provienen del mismo protocolo (LOSO) y del mismo conjunto de características, de modo que son comparables entre sí.
-- **Reproducibilidad.** Todas las fuentes de aleatoriedad —el reparto de los datos, la inicialización de los pesos, el dropout y el orden de los lotes— se controlan con una semilla. Dos ejecuciones con la misma configuración producen el mismo resultado, lo que permite atribuir cualquier diferencia a los cambios introducidos y no al azar (sección 10.4).
+- **Reproducibilidad.** Todas las fuentes de aleatoriedad —el reparto de los datos, la inicialización de los pesos, el dropout y el orden de los lotes— se controlan con una semilla. Dos ejecuciones con la misma configuración en el mismo equipo producen el mismo resultado, lo que permite atribuir cualquier diferencia a los cambios introducidos y no al azar. Entre equipos distintos la reproducción no es exacta, por lo que toda comparación se hace entre ejecuciones del mismo equipo (sección 10.4).
 - **Línea base inmutable.** Cada nueva opción de entrenamiento se incorporó desactivada por defecto, de modo que una ejecución sin opciones reprodujera exactamente el resultado de referencia.
 - **Hipótesis explícitas.** Cada experimento se planteó como una hipótesis con un resultado esperado, y los resultados negativos se documentaron con el mismo detalle que los positivos (sección 14.6).
 - **Registro de resultados.** Cada ejecución guarda un reporte en formato JSON con sus hiperparámetros, su reparto de datos y sus métricas, versionado en el repositorio.
@@ -68,7 +67,7 @@ Tabla: Herramientas utilizadas en el desarrollo. {#tab:herramientas}
 | Backend | FastAPI, Uvicorn | API REST, WebSocket, servidor ASGI |
 | Pruebas | pytest | Pruebas unitarias, de regresión y de integración |
 | Despliegue | Docker | Imagen del servicio |
-| Gestión | Git, GitHub | Control de versiones y trabajo colaborativo |
+| Gestión | Git, GitHub, Trello | Control de versiones, trabajo colaborativo y tablero Kanban |
 | Documentación | Markdown, matplotlib | Documentación técnica y figuras de resultados |
 | Edición | Visual Studio Code | Editor principal |
 

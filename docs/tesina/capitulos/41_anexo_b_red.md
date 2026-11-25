@@ -11,7 +11,7 @@ Tabla: Capas de la red BiLSTM, dimensiones y cantidad de parámetros. {#tab:capa
 | LSTM hacia adelante | (T, 138) | 128 | 137 216 | 4 × (138 × 128 + 128 × 128 + 2 × 128) |
 | LSTM hacia atrás | (T, 138) | 128 | 137 216 | Ídem |
 | Concatenación | 128 + 128 | 256 | 0 | |
-| Dropout (p = 0,2) | 256 | 256 | 0 | Sólo activo durante el entrenamiento |
+| Dropout (p = 0,4 en el modelo servido) | 256 | 256 | 0 | Sólo activo durante el entrenamiento |
 | Lineal | 256 | 64 | 16 448 | 256 × 64 + 64 |
 | **Total** | | | **290 880** | |
 
@@ -37,6 +37,8 @@ class BiLSTMClassifier(nn.Module):
         features = torch.cat([hidden[-2], hidden[-1]], dim=1)
         return self.fc(self.dropout(features))
 ```
+
+El valor por defecto del dropout (0,2) es el de la configuración de referencia; el modelo servido se entrena con 0,4 (sección 10.3). El dropout no cambia la cantidad de parámetros ni se aplica durante la inferencia.
 
 El método `forward` recibe el lote de secuencias completadas con ceros y la longitud real de cada una. `pack_padded_sequence` hace que la recurrencia se detenga en el último cuadro válido de cada secuencia, de modo que el relleno no contamina el estado final. `hidden[-2]` y `hidden[-1]` son los estados finales de la dirección hacia adelante y hacia atrás, respectivamente.
 

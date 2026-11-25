@@ -25,7 +25,7 @@ Para este proyecto, el enfoque basado en el esqueleto ofrece ventajas decisivas:
 - **Compacidad.** Un cuadro se reduce de seis millones de valores a unas decenas de coordenadas, lo que permite entrenar un clasificador pequeño, en pocos minutos y sin GPU.
 - **Invarianza a factores irrelevantes.** El fondo, la ropa, la iluminación y el color de piel quedan absorbidos por el detector, que ya fue entrenado para ignorarlos. El clasificador trabaja sólo con la geometría.
 - **Transferencia.** El detector fue entrenado con cientos de miles de imágenes de manos que ningún proyecto académico podría reunir. Su conocimiento se reutiliza sin costo.
-- **Privacidad y ancho de banda.** Las coordenadas no permiten reconstruir la imagen de la persona, y ocupan una fracción mínima del tamaño de un cuadro.
+- **Privacidad y ancho de banda.** Las coordenadas no permiten reconstruir la imagen de la persona y ocupan una fracción mínima del tamaño de un cuadro. En el sistema implementado la ventaja es parcial, porque el cliente envía el cuadro completo al servidor (sección 8.8.1).
 
 Su desventaja es que el clasificador queda limitado por la calidad del detector: si este no encuentra la mano en un cuadro, esa información se pierde por completo. El Capítulo 14 muestra que esta limitación es, de hecho, la principal fuente de variación en el desempeño del sistema.
 
@@ -52,21 +52,21 @@ La @fig:landmarks muestra la numeración de los 21 puntos: el 0 corresponde a la
 
 ### 4.3.2 La API Tasks y la API heredada
 
-MediaPipe ofreció durante años una interfaz de programación conocida como *Solutions* (`mediapipe.solutions.hands`), que es la que utilizan la mayoría de los tutoriales y la que usaba el prototipo de escritorio que sirvió como punto de partida de este proyecto. Al construir el sistema se comprobó que esa interfaz ya no está incluida en las versiones actuales del paquete distribuido por PyPI[^mp]: en la versión 0.10.33, el atributo `solutions` directamente no existe. El sistema utiliza en su lugar la interfaz soportada, **MediaPipe Tasks** (`HandLandmarker`), que ofrece el mismo modelo pero requiere descargar explícitamente su archivo de pesos (`hand_landmarker.task`).
+MediaPipe ofreció durante años una interfaz de programación conocida como *Solutions* (`mediapipe.solutions.hands`), que es la que utilizan la mayoría de los tutoriales y la que usaba el prototipo de escritorio que sirvió como punto de partida de este proyecto. Al construir el sistema se comprobó que esa interfaz ya no está incluida en las versiones actuales del paquete distribuido por PyPI[^mp]: en la versión que usa el proyecto (0.10.35), el atributo `solutions` directamente no existe. El sistema utiliza en su lugar la interfaz soportada, **MediaPipe Tasks** (`HandLandmarker`), que ofrece el mismo modelo pero requiere descargar explícitamente su archivo de pesos (`hand_landmarker.task`).
 
-El hallazgo es menor en lo técnico, pero ilustra un riesgo concreto de construir sobre prototipos o tutoriales de terceros sin auditarlos: el código puede dejar de funcionar no por un error propio, sino por cambios en las dependencias. Por eso el proyecto fija las versiones de sus dependencias y documenta el paso de descarga del modelo (ver el Anexo C).
+El hallazgo muestra que el código puede dejar de funcionar por cambios en las dependencias y no por un error propio. Por eso el proyecto fija sus versiones y documenta el paso de descarga del modelo (ver el Anexo C).
 
 [^mp]: Es un problema conocido y reportado en el repositorio oficial de MediaPipe (google-ai-edge/mediapipe, *issues* 6192, 6200 y 6204).
 
 ## 4.4 Lateralidad y orientación de la imagen
 
-La lateralidad que informa MediaPipe se deduce de la imagen: el modelo decide si una mano es izquierda o derecha según cómo se ve. Esto tiene una consecuencia que no es evidente. Las cámaras web suelen mostrarse **espejadas** —como un espejo— porque así resulta natural para el usuario. Si una imagen se procesa espejada, la mano derecha de la persona aparece del lado derecho de la imagen y tiene el aspecto de una mano izquierda; MediaPipe la etiquetará en consecuencia.
+La lateralidad que informa MediaPipe se deduce de la imagen: el modelo decide si una mano es izquierda o derecha según cómo se ve. Las cámaras web suelen mostrarse **espejadas** porque así resulta natural para el usuario. Si una imagen se procesa espejada, la mano derecha de la persona aparece del lado derecho de la imagen y tiene el aspecto de una mano izquierda; MediaPipe la etiquetará en consecuencia.
 
-Mientras la orientación sea la misma durante el entrenamiento y durante el uso, esto no es un problema: el modelo aprende con una convención y se usa con la misma. El problema aparece cuando las dos etapas usan orientaciones distintas, porque las manos quedan intercambiadas respecto de lo aprendido. La sección 9.7 relata cómo este desajuste se produjo efectivamente en el proyecto, por qué ningún control automático podía detectarlo y cómo se resolvió.
+Esto no es un problema mientras el entrenamiento y el uso trabajen con la misma orientación; si difieren, las manos quedan intercambiadas respecto de lo aprendido. La sección 9.7 relata cómo este desajuste se produjo en el proyecto y cómo se resolvió.
 
 ## 4.5 Limitaciones de la detección
 
-El detector de manos no es infalible. Sus fallas más comunes son:
+Las fallas más comunes del detector son:
 
 - **Desenfoque por movimiento.** En los movimientos rápidos, la mano aparece borrosa y el detector puede no encontrarla.
 - **Oclusiones.** Cuando una mano tapa a la otra, o cuando la mano pasa por delante de la cara, los puntos ocultos se estiman con poca precisión o la mano no se detecta.

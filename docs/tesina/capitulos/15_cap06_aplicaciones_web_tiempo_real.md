@@ -6,17 +6,17 @@ El modelo de reconocimiento sólo es útil si llega a las personas. Este capítu
 
 En una **arquitectura cliente-servidor**, un programa —el servidor— ofrece un servicio a través de la red, y otros programas —los clientes— lo consumen enviándole solicitudes. En una aplicación web, el cliente es el navegador del usuario, que ejecuta una interfaz escrita en HTML, CSS y JavaScript, y el servidor es un proceso que corre en una computadora remota.
 
-Para este proyecto, la división de responsabilidades entre ambos extremos es una decisión de diseño con consecuencias: dónde se ejecuta la detección de manos determina cuántos datos viajan por la red, cuánto cómputo necesita el servidor y qué tan potente debe ser el dispositivo del usuario. La sección 8.8 analiza las alternativas.
+Dónde se ejecuta la detección de manos determina cuántos datos viajan por la red, cuánto cómputo necesita el servidor y qué tan potente debe ser el dispositivo del usuario. La sección 8.8 analiza las alternativas.
 
 ## 6.2 HTTP y el estilo REST
 
 El protocolo **HTTP** es la base de la web: el cliente envía una solicitud —por ejemplo, `GET /health`— y el servidor devuelve una respuesta. Cada intercambio es independiente y lo inicia siempre el cliente. Fielding (2000) formalizó el estilo arquitectónico **REST**, que organiza un servicio como un conjunto de recursos identificados por direcciones y manipulados mediante los métodos estándar de HTTP, sin estado entre solicitudes. Es el estilo dominante para las interfaces de programación web (API), y el sistema lo utiliza para sus servicios de consulta (sección 11.2).
 
-REST es adecuado para operaciones aisladas, pero poco eficiente para un flujo continuo como el video. Enviar cada cuadro como una solicitud HTTP independiente implica repetir en cada envío las cabeceras del protocolo y, si no se reutilizan las conexiones, el costo de establecerlas. Con ocho cuadros por segundo, ese costo se multiplica.
+REST es adecuado para operaciones aisladas, pero poco eficiente para un flujo continuo como el video. Enviar cada cuadro como una solicitud HTTP independiente implica repetir en cada envío las cabeceras del protocolo y, si no se reutilizan las conexiones, el costo de establecerlas.
 
 ## 6.3 WebSocket
 
-El protocolo **WebSocket** (Fette y Melnikov, 2011) establece, a partir de una solicitud HTTP inicial, un canal persistente y bidireccional entre cliente y servidor. Una vez abierto, cualquiera de los dos extremos puede enviar mensajes —de texto o binarios— en cualquier momento, con una sobrecarga mínima por mensaje. Es el protocolo estándar para aplicaciones con comunicación continua, como chats, juegos o tableros en vivo.
+El protocolo **WebSocket** (Fette y Melnikov, 2011) establece, a partir de una solicitud HTTP inicial, un canal persistente y bidireccional entre cliente y servidor. Una vez abierto, cualquiera de los dos extremos puede enviar mensajes —de texto o binarios— en cualquier momento, con una sobrecarga mínima por mensaje.
 
 La @tab:protocolos compara las alternativas consideradas para transportar el video al servidor.
 
@@ -35,7 +35,7 @@ Se eligió WebSocket por su equilibrio entre eficiencia y simplicidad. Además, 
 
 ## 6.4 Acceso a la cámara desde el navegador
 
-Los navegadores modernos permiten acceder a la cámara mediante la interfaz `MediaDevices.getUserMedia()`, que solicita el permiso del usuario y devuelve un flujo de video que puede mostrarse en un elemento `<video>` (Mozilla, s.f.). Por razones de seguridad, el acceso sólo está permitido en contextos seguros: páginas servidas por HTTPS o desde la propia máquina (`localhost`). Este requisito condiciona el despliegue, porque la aplicación publicada debe servirse con HTTPS para que la cámara funcione.
+Los navegadores modernos permiten acceder a la cámara mediante la interfaz `MediaDevices.getUserMedia()`, que solicita el permiso del usuario y devuelve un flujo de video que puede mostrarse en un elemento `<video>` (Mozilla, s.f.). Por razones de seguridad, el acceso sólo está permitido en contextos seguros: páginas servidas por HTTPS o desde la propia máquina (`localhost`). Por eso la aplicación publicada debe servirse con HTTPS.
 
 Para enviar un cuadro al servidor, el cliente lo dibuja sobre un elemento `<canvas>` y lo codifica como imagen JPEG. El canvas permite además transformar la imagen antes de enviarla —por ejemplo, reducir su resolución o espejarla horizontalmente—, operaciones que el sistema utiliza para disminuir el volumen de datos y para respetar la convención de orientación de la sección 4.4.
 
@@ -45,7 +45,7 @@ Para enviar un cuadro al servidor, el cliente lo dibuja sobre un elemento `<canv
 
 Python es el lenguaje dominante en aprendizaje automático: PyTorch, scikit-learn (Pedregosa et al., 2011), OpenCV y MediaPipe ofrecen sus interfaces principales en Python. Escribir el backend en el mismo lenguaje permite que el servidor reutilice exactamente el mismo código de preprocesamiento que se usa para entrenar, que es un requisito central del diseño (sección 8.5).
 
-**FastAPI** es un marco de trabajo web para Python orientado a la construcción de API (Ramírez, s.f.). Se basa en el estándar **ASGI**, que a diferencia de su antecesor WSGI soporta programación asincrónica y conexiones de larga duración como WebSocket. Entre sus características se destacan la validación automática de datos a partir de las anotaciones de tipos de Python y la generación automática de documentación de la API en formato OpenAPI, navegable desde el propio servidor. El servidor ASGI utilizado para ejecutarlo es **Uvicorn**.
+**FastAPI** es un marco de trabajo web para Python orientado a la construcción de API (Ramírez, s.f.). Se basa en el estándar **ASGI**, que a diferencia de su antecesor WSGI soporta programación asincrónica y conexiones de larga duración como WebSocket. Además, valida los datos a partir de las anotaciones de tipos y genera la documentación de la API en formato OpenAPI. El servidor ASGI utilizado para ejecutarlo es **Uvicorn**.
 
 ### 6.5.2 Concurrencia y trabajo bloqueante
 
@@ -61,7 +61,7 @@ Una aplicación de aprendizaje automático depende de muchas bibliotecas con ver
 
 ### 6.6.2 Plataformas como servicio y capa gratuita
 
-Las **plataformas como servicio** (PaaS), como Render, Railway o Google Cloud Run, ejecutan contenedores sin que el desarrollador administre servidores. Varias ofrecen una **capa gratuita** con restricciones típicas: poca memoria y CPU compartida, suspensión del servicio tras un período de inactividad —con un arranque lento en la siguiente solicitud— y un número limitado de servicios. La sección 13.4 explica por qué, para un servicio que ejecuta MediaPipe y PyTorch en cada cuadro, esas restricciones terminaron pesando más que la comodidad de la plataforma.
+Las **plataformas como servicio** (PaaS), como Render, Railway o Google Cloud Run, ejecutan contenedores sin que el desarrollador administre servidores. Varias ofrecen una **capa gratuita** con restricciones típicas: poca memoria y CPU compartida, suspensión del servicio tras un período de inactividad —con un arranque lento en la siguiente solicitud— y un número limitado de servicios. La sección 13.4 explica por qué esas restricciones descartaron esta opción.
 
 ### 6.6.3 Alojamiento estático y túneles
 
@@ -76,5 +76,5 @@ Una herramienta cuyo propósito es la inclusión debe ser, ella misma, accesible
 - Foco del teclado visible en todos los controles.
 - Información que cambia dinámicamente anunciada a las tecnologías de asistencia, como los lectores de pantalla, mediante regiones vivas (`aria-live`).
 
-Cabe una observación: los usuarios directos de la herramienta —una persona sorda que seña y una persona oyente que lee la traducción— no necesariamente usan lectores de pantalla, pero la accesibilidad no se agota en un perfil de usuario. Una persona con baja visión, o con una discapacidad motriz, puede ser cualquiera de los dos interlocutores. La sección 12.6 detalla cómo se aplicaron estas pautas.
+Aunque los usuarios directos de la herramienta no necesariamente usan lectores de pantalla, cualquiera de los dos interlocutores puede tener baja visión o una discapacidad motriz. La sección 12.6 detalla cómo se aplicaron estas pautas.
 

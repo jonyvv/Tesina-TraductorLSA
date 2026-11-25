@@ -201,9 +201,10 @@ backend (ver "Regularización" más abajo) y la que informa la tesina. El análi
 números está en `docs/PROXIMOS_PASOS.md`.
 
 > **v2 todavía no está adoptada.** Da el mejor número de la tabla y gana en 8 de los 10
-> sujetos, pero falta decidir si pasa a ser el resultado principal: implica reentrenar el
-> modelo servido y reescribir las secciones 14.6.2 y 14.6.3 de la tesina, donde v2 figura
-> como variante descartada por el screening de dos folds.
+> sujetos, pero falta decidir si pasa a ser el resultado principal: implica cambiar el
+> preprocesamiento del backend y reentrenar el modelo servido. La tesina la informa en la
+> sección 14.6.4 como resultado medido, comparada contra v1 en la misma máquina, y explica
+> por qué el resultado principal sigue siendo v1.
 
 #### Línea base no neuronal (Random Forest)
 

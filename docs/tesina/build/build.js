@@ -48,7 +48,7 @@ const META = {
   alumnosCorto: "Provenzano, L. - Videla, J.",
   coordinador: "Ing. Mario Alberto Mirallas",
   tutor: "Marcelo Palma",
-  metodologia: "[[PENDIENTE: nombre del profesor/a de Metodología]]",
+  metodologia: "Elisa Galdame",
   anio: "2026",
 };
 
@@ -508,7 +508,7 @@ function caratula() {
     derecha(`**Año:** ${META.anio}`),
     derecha(`**Profesor Coordinador:** ${META.coordinador}`),
     derecha(`**Profesor Tutor:** ${META.tutor}`),
-    derecha(`**Profesor/a de Metodología:** ${META.metodologia}`),
+    derecha(`**Profesora de Metodología:** ${META.metodologia}`),
   ];
   const vacia = new Header({ children: [new Paragraph({ children: [] })] });
   const pieVacio = new Footer({ children: [new Paragraph({ children: [] })] });

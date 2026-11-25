@@ -51,14 +51,14 @@ pip install -r ml/requirements.txt
 # Etapa 1: extracción de características (una sola vez, ~47 minutos)
 python ml/extract_features.py --dataset-dir ".lsa64_cache/extracted/all"
 
-# Etapa 2: entrenamiento del modelo que se sirve (segundos)
-python ml/train_lsa64.py --labels-map ml/lsa64_labels.json
+# Etapa 2: entrenamiento del modelo que se sirve, con la configuración definitiva (pocos minutos)
+python ml/train_lsa64.py --labels-map ml/lsa64_labels.json --dropout 0.4 --aug-frame-drop 0.30
 
-# Validación leave-one-subject-out (~55 minutos)
-python ml/evaluate_loso.py
+# Validación leave-one-subject-out de la configuración definitiva (~55 minutos)
+python ml/evaluate_loso.py --dropout 0.4 --aug-frame-drop 0.30 --output ml/reports/loso_do40_fd30.json
 ```
 
-El entrenamiento guarda el modelo en `backend/models/modelo_lsa64_lstm.pt` y su resumen en el archivo `.json` del mismo nombre. La validación guarda su reporte en `ml/reports/loso_lsa64.json`.
+El entrenamiento guarda el modelo en `backend/models/modelo_lsa64_lstm.pt` y su resumen en el archivo `.json` del mismo nombre. La validación guarda su reporte en el archivo indicado con `--output`. Sin las opciones de regularización, ambos scripts reproducen la configuración de referencia, cuyo reporte es `ml/reports/loso_lsa64.json`.
 
 ## C.6 Pruebas automatizadas
 

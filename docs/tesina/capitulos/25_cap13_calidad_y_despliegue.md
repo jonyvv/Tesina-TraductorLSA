@@ -4,7 +4,7 @@ Este capítulo describe las pruebas automatizadas del sistema, las consideracion
 
 ## 13.1 Pruebas automatizadas
 
-El proyecto cuenta con **116 pruebas automatizadas** escritas con pytest, organizadas en dos carpetas: `tests/`, para el backend y el módulo compartido, y `ml/tests/`, para el pipeline de datos y entrenamiento de LSA64. Todas se ejecutan sin cámara, sin un modelo entrenado y, salvo las de integración, sin MediaPipe: utilizan **dobles de prueba** —objetos que imitan la interfaz de un componente real con un comportamiento controlado— y datos sintéticos. Esto permite ejecutarlas en cualquier máquina en menos de un minuto. La @tab:pruebas resume su distribución.
+El proyecto cuenta con **132 pruebas automatizadas** escritas con pytest, organizadas en dos carpetas: `tests/`, para el backend y el módulo compartido, y `ml/tests/`, para el pipeline de datos y entrenamiento de LSA64. Todas se ejecutan sin cámara, sin un modelo entrenado y, salvo las de integración, sin MediaPipe: utilizan **dobles de prueba** —objetos que imitan la interfaz de un componente real con un comportamiento controlado— y datos sintéticos. Esto permite ejecutarlas en cualquier máquina en menos de un minuto. La @tab:pruebas resume su distribución.
 
 Tabla: Distribución de las pruebas automatizadas. {#tab:pruebas}
 
@@ -14,13 +14,15 @@ Tabla: Distribución de las pruebas automatizadas. {#tab:pruebas}
 | `tests/test_modelo_lse.py` | 14 | Carga de modelos, rechazo de esquemas incompatibles, correspondencia entre columnas y clases |
 | `tests/test_traductor_service.py` | 20 | Suavizado, separación de confianza y estabilidad, aislamiento entre sesiones, ventana temporal |
 | `tests/test_backend_e2e.py` | 9 | Arranque de la aplicación, servicios HTTP, ida y vuelta de un cuadro por WebSocket, conexiones simultáneas |
+| `tests/test_cors.py` | 9 | Orígenes permitidos: lectura de la variable de entorno, aceptación y rechazo del encabezado `Origin` en el WebSocket (sección 13.2) |
 | `ml/tests/test_lsa64_data.py` | 9 | Lectura de la nomenclatura de LSA64, etiqueta y persona de cada video, reparto por persona, guardado e invalidación del caché |
 | `ml/tests/test_lsa64_training.py` | 9 | Uso del caché sin releer los videos, rechazo de cachés incompatibles, filtrado de cuadros vacíos, longitud mínima, detección de fuga |
 | `ml/tests/test_lsa64_loso.py` | 8 | Una partición por persona, particiones completas y disjuntas, determinismo, detección de una fuga inyectada |
 | `ml/tests/test_lsa64_augment.py` | 15 | Aumentación: identidad con las opciones apagadas, que no toque los cuadros vacíos ni el indicador de presencia, determinismo con semilla, sólo en entrenamiento |
 | `ml/tests/test_lsa64_labels_map.py` | 6 | Que las glosas se apliquen al final sobre las etiquetas canónicas, conserven el orden y nunca lleguen al caché |
 | `ml/tests/test_features_posicion.py` | 12 | Variante v2 del vector: índices derivados del ancho real, compatibilidad con v1 |
-| **Total** | **116** | |
+| `ml/tests/test_baseline_rf.py` | 7 | Resumen de secuencias de la línea base: largo y orden de los agregados, secuencias de un cuadro, que el resumen descarte el orden temporal |
+| **Total** | **132** | |
 
 ### 13.1.1 Pruebas de regresión
 
@@ -54,7 +56,8 @@ Las pruebas verifican la lógica del sistema, pero no la calidad del reconocimie
 
 El sistema se empaqueta en una única imagen de Docker, definida en el `Dockerfile` de la raíz del repositorio, que sirve la API, el canal WebSocket y el cliente. Las decisiones principales son:
 
-- **Imagen base liviana** (`python:3.12-slim`), con sólo la biblioteca de sistema que MediaPipe requiere. Se utiliza la versión de OpenCV sin interfaz gráfica, que no necesita las bibliotecas de ventanas.
+- **Imagen base liviana** (`python:3.12-slim`), con sólo las bibliotecas de sistema que MediaPipe requiere: GLib, y EGL y OpenGL ES, que su biblioteca nativa enlaza aunque la inferencia se haga en CPU. Se utiliza la versión de OpenCV sin interfaz gráfica, que no necesita las bibliotecas de ventanas. Como MediaPipe declara como dependencia la versión con interfaz gráfica, el `Dockerfile` la reemplaza por la otra después de instalar.
+- **Versiones fijas.** MediaPipe, OpenCV, NumPy y PyTorch se instalan en las mismas versiones exactas que el entorno de entrenamiento. La primera construcción de la imagen, con versiones mínimas en lugar de exactas, instaló una versión mayor de MediaPipe distinta de la usada para extraer las características: el contenedor no llegó a arrancar, pero si lo hubiera hecho habría roto en silencio el requisito de preprocesamiento idéntico (RNF-08).
 - **Dependencias en una capa propia.** El archivo de dependencias se copia e instala antes que el código. Docker reutiliza esa capa mientras las dependencias no cambien, de modo que modificar el código no obliga a reinstalar MediaPipe y PyTorch en cada construcción.
 - **Modelo de MediaPipe descargado durante la construcción.** Si se descargara al arrancar, cada despliegue y cada reinicio del contenedor dependerían de que el servidor de Google sea accesible en ese momento. Descargándolo en la construcción, la imagen queda autocontenida.
 - **Modelo entrenado incluido en la imagen.** El modelo se versiona junto con el código y se copia a la imagen; nunca se entrena en producción.
@@ -62,7 +65,9 @@ El sistema se empaqueta en una única imagen de Docker, definida en el `Dockerfi
 
 ### 13.3.1 Tamaño de la imagen
 
-PyTorch es necesario para servir la BiLSTM, pero la distribución por defecto incluye las bibliotecas de CUDA para GPU, que ocupan varios gigabytes y no se usan: la inferencia de una ventana de cuadros por vez se resuelve en CPU en pocos milisegundos. El `Dockerfile` instala la distribución sólo para CPU, desde el índice de paquetes correspondiente, antes que el resto de las dependencias, lo que reduce varios gigabytes la imagen y acorta su construcción y su arranque. [[PENDIENTE: construir la imagen y registrar acá su tamaño final.]]
+PyTorch es necesario para servir la BiLSTM, pero la distribución por defecto incluye las bibliotecas de CUDA para GPU, que ocupan varios gigabytes y no se usan: la inferencia de una ventana de cuadros por vez se resuelve en CPU en pocos milisegundos. El `Dockerfile` instala la distribución sólo para CPU, desde el índice de paquetes correspondiente, antes que el resto de las dependencias, lo que reduce varios gigabytes la imagen y acorta su construcción y su arranque.
+
+La imagen resultante ocupa 1,9 GB sin comprimir y 571 MB comprimida, que es lo que se transfiere al publicarla o descargarla. Las bibliotecas de Python explican 1,54 GB, la mayor parte por PyTorch, MediaPipe y OpenCV; les siguen las bibliotecas gráficas que pide MediaPipe, con unos 210 MB porque la implementación de EGL de la distribución arrastra el compilador LLVM, y la imagen base de Python, con unos 135 MB. El contenedor responde al servicio de estado unos 15 segundos después de arrancar, el tiempo que tardan en cargarse el detector de manos y el modelo.
 
 ## 13.4 Despliegue
 

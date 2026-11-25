@@ -56,9 +56,9 @@ Los **ángulos de flexión** se calculan sobre los puntos normalizados. Para cad
 
 La normalización respecto de la muñeca tiene un costo: al centrar cada mano en su propia muñeca, el vector conserva la **forma** de la mano pero descarta **dónde** está. Como se vio en la sección 1.3.1, la ubicación es uno de los parámetros formales de una seña, y dos señas con igual configuración y movimiento, realizadas a distinta altura, resultan indistinguibles en la versión v1 del vector.
 
-Para medir el efecto de esa pérdida se implementó una variante experimental, **v2**, que agrega a cada bloque la posición de la muñeca sin normalizar: tres valores por mano, con lo que el vector pasa de 138 a 144 valores. Esta variante tiene una limitación conocida: la posición queda referida al encuadre de la cámara y no al cuerpo de la persona. En LSA64 eso es aceptable porque la cámara está fija y las personas se ubicaron sobre marcas en el piso, pero con una cámara web cada usuario se ubica distinto. Una versión utilizable en producción debería expresar la posición respecto de un punto del cuerpo —por ejemplo, los hombros o la nariz, obtenidos con el modelo de pose de MediaPipe—.
+Para medir el efecto de esa pérdida se implementó una variante experimental, **v2**, que agrega a cada bloque la posición de la muñeca sin normalizar: tres valores por mano, con lo que el vector pasa de 138 a 144 valores. Esta variante tiene una limitación conocida: la posición queda referida al encuadre de la cámara y no al cuerpo de la persona. En LSA64 eso es aceptable porque todos los videos se grabaron con la misma cámara fija y el mismo encuadre, pero con una cámara web cada usuario se ubica distinto. Una versión utilizable en producción debería expresar la posición respecto de un punto del cuerpo —por ejemplo, los hombros o la nariz, obtenidos con el modelo de pose de MediaPipe—.
 
-La versión del esquema forma parte de los metadatos de cada modelo, y el backend actual rechaza explícitamente un modelo v2, porque no genera esa variante. El resultado del experimento se presenta en la sección 14.6.
+La versión del esquema forma parte de los metadatos de cada modelo, y el backend actual rechaza explícitamente un modelo v2, porque no genera esa variante. Por eso el modelo servido y el resultado principal de este trabajo son de la versión v1. Los resultados de v2 se presentan en la sección 14.6.4.
 
 ## 9.7 Convención de orientación de la imagen
 
@@ -85,13 +85,13 @@ El reconocimiento del alfabeto quedó fuera del alcance: LSA64 no contiene letra
 
 ## 9.9 Extracción en dos etapas
 
-Procesar los 3200 videos de LSA64 implica ejecutar MediaPipe sobre más de 130 000 cuadros de alta resolución. En las primeras versiones, cada entrenamiento repetía esa extracción, de modo que probar un cambio en la red —que entrena en segundos— costaba casi una hora de espera. El pipeline se reorganizó en dos etapas independientes, que muestra la @fig:pipeline.
+Procesar los 3200 videos de LSA64 implica ejecutar MediaPipe sobre más de 130 000 cuadros de alta resolución. En las primeras versiones, cada entrenamiento repetía esa extracción, de modo que probar un cambio en la red, que entrena en pocos minutos, costaba casi una hora de espera. El pipeline se reorganizó en dos etapas independientes, que muestra la @fig:pipeline.
 
 ![Pipeline de datos en dos etapas. La extracción con MediaPipe se ejecuta una vez y se guarda en un caché; el entrenamiento y la evaluación leen el caché tantas veces como sea necesario.](figuras/fig_pipeline_dos_etapas.png){ancho=15 #fig:pipeline}
 
 **Etapa 1: extracción** (`ml/extract_features.py`). Recorre los videos, extrae la secuencia de vectores de cada uno y guarda el resultado en un único archivo comprimido de NumPy (`.npz`), junto con la etiqueta y la persona de cada secuencia. La extracción se paraleliza en varios procesos, cada uno con su propia instancia de MediaPipe; con 8 procesos en un procesador de 8 núcleos tardó 47 minutos.
 
-**Etapa 2: entrenamiento** (`ml/train_lsa64.py`, `ml/evaluate_loso.py`). Lee el caché y entrena o evalúa el modelo. Un entrenamiento completo tarda segundos; una validación LOSO de 10 particiones, alrededor de una hora.
+**Etapa 2: entrenamiento** (`ml/train_lsa64.py`, `ml/evaluate_loso.py`). Lee el caché y entrena o evalúa el modelo. Un entrenamiento completo tarda unos pocos minutos en CPU; una validación LOSO de 10 particiones, alrededor de una hora.
 
 ### 9.9.1 Metadatos y compatibilidad del caché
 

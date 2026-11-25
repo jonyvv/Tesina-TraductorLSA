@@ -10,7 +10,7 @@ El cliente es una página web de una sola pantalla, separada en tres archivos po
 - `frontend/styles.css`: la **presentación**, organizada a partir de variables de diseño —colores, espaciados, tipografías— que definen un tema claro y uno oscuro.
 - `frontend/app.js`: el **comportamiento**: acceso a la cámara, comunicación con el servidor, dibujo del esqueleto, métricas y edición del texto.
 
-Una primera versión reunía todo en un único archivo HTML con estilos y código embebidos. La separación facilitó el mantenimiento y permite que cada archivo se lea de forma independiente.
+Una primera versión reunía todo en un único archivo HTML con estilos y código embebidos.
 
 La @fig:interfaz muestra la interfaz en su tema claro. A la izquierda se ubica el video con el esqueleto de las manos superpuesto y, en su esquina, la seña detectada; debajo, los botones para iniciar y detener la cámara. A la derecha, tres paneles muestran la detección (confianza, estabilidad y manos detectadas), el rendimiento y las opciones. En la parte inferior se acumula el texto traducido.
 
@@ -34,7 +34,7 @@ La reducción a 480 píxeles y la compresión JPEG reducen el volumen de datos s
 
 Si el servidor tarda más en procesar un cuadro que el intervalo entre envíos, los cuadros se acumulan en una cola que crece sin límite: la latencia aumenta constantemente y el usuario ve resultados cada vez más atrasados. Para evitarlo, el cliente lleva la cuenta de los cuadros enviados que todavía no tienen respuesta y **no envía uno nuevo si ya hay dos pendientes**. Con ese límite, el servidor siempre tiene trabajo, pero nunca acumula atraso.
 
-Este control tiene también una consecuencia metodológica. Sin él, la latencia medida en el cliente dejaría de reflejar el tiempo de procesamiento y pasaría a medir, sobre todo, el tiempo de espera en la cola. Es un error de medición fácil de cometer y difícil de notar, porque el número resultante parece razonable al principio y empeora gradualmente.
+Sin este control, además, la latencia medida en el cliente pasaría a medir sobre todo el tiempo de espera en la cola, un error fácil de cometer y difícil de notar.
 
 ### 12.2.2 Reconexión
 
@@ -55,7 +55,7 @@ El texto traducido puede copiarse al portapapeles, corregirse borrando la últim
 
 El servidor devuelve, junto con cada predicción, las coordenadas de los puntos de las manos detectadas. El cliente las dibuja sobre un canvas superpuesto al video, uniendo los puntos según las conexiones del esqueleto recibidas de `/model/info`. Este dibujo cumple una función práctica: le muestra al usuario, en tiempo real, si el sistema está "viendo" sus manos. Si el esqueleto no aparece, el problema es de detección —iluminación, encuadre, distancia— y no de reconocimiento.
 
-Las coordenadas llegan en el sistema de la imagen ya espejada, y el video también se muestra espejado. Por eso el canvas del esqueleto no lleva ninguna transformación adicional: los puntos caen directamente sobre las manos que ve el usuario. Los grosores de las líneas se escalan según el tamaño del video para mantener la proporción en cualquier pantalla.
+Las coordenadas llegan en el sistema de la imagen ya espejada, y el video también se muestra espejado. Por eso el canvas del esqueleto no lleva ninguna transformación adicional: los puntos caen directamente sobre las manos que ve el usuario.
 
 ## 12.5 Métricas de desempeño
 
@@ -86,11 +86,11 @@ Tabla: Decisiones de accesibilidad del cliente web. {#tab:accesibilidad}
 | Respeto de `prefers-reduced-motion` | Desactiva las animaciones para quienes lo configuraron en su sistema |
 | Tema claro y oscuro | Sigue la preferencia del sistema operativo y puede cambiarse manualmente; la elección se recuerda |
 
-La @fig:interfaz-oscuro muestra el tema oscuro, que se aplica automáticamente cuando el sistema operativo del usuario lo tiene configurado.
+La @fig:interfaz-oscuro muestra el tema oscuro.
 
 ![Interfaz del cliente web en su tema oscuro.](figuras/cap_interfaz_oscuro.png){ancho=15 #fig:interfaz-oscuro}
 
 ## 12.7 Diseño adaptable
 
-La interfaz se adapta al ancho de la pantalla: en pantallas angostas, los paneles laterales pasan a ubicarse debajo del video, en una sola columna, y los botones ocupan todo el ancho para facilitar su uso táctil. [[PENDIENTE: verificar en un teléfono real; en una prueba con un navegador sin interfaz gráfica, a 400 píxeles de ancho, algunos paneles parecían desbordar a la derecha.]]
+La interfaz se adapta al ancho de la pantalla: por debajo de 940 píxeles, los paneles laterales pasan a ubicarse debajo del video, en una sola columna, y por debajo de 560 píxeles los botones ocupan todo el ancho para facilitar su uso táctil. Se verificó con la emulación de dispositivos móviles del navegador a 320, 360 y 400 píxeles de ancho: ningún elemento sobresale del ancho de la pantalla ni aparece una barra de desplazamiento horizontal. [[PENDIENTE: probar en un teléfono real con la cámara, una vez publicado el sistema con HTTPS (sección 13.4).]]
 

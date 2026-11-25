@@ -6,7 +6,7 @@ Este capítulo presenta los resultados de la evaluación del modelo y del sistem
 
 La primera estimación del desempeño se obtuvo con el reparto único descripto en la sección 10.2: 7 personas para entrenar, 1 para validar y 2 para probar. Tres ejecuciones sobre datos prácticamente idénticos, con pequeñas variaciones de la configuración, dieron exactitudes de prueba de **86,05 %**, **78,55 %** y **81,25 %**. Una diferencia de 7,5 puntos entre ejecuciones casi iguales no permite afirmar nada: ni cuál es el desempeño del modelo ni si un cambio lo mejora.
 
-El problema no es de medición, sino de muestra. Con dos personas en la prueba, la estimación depende fuertemente de quiénes sean esas dos personas. Este hallazgo motivó la incorporación del tercer objetivo específico —evaluar con un protocolo independiente del sujeto— y la adopción de la validación leave-one-subject-out como protocolo oficial de la tesina.
+El problema es el tamaño de la muestra: con dos personas en la prueba, la estimación depende fuertemente de quiénes sean esas dos personas. Este hallazgo motivó la incorporación del tercer objetivo específico —evaluar con un protocolo independiente del sujeto— y la adopción de la validación leave-one-subject-out como protocolo oficial de la tesina.
 
 ## 14.2 Resultado principal
 
@@ -34,7 +34,7 @@ Tabla: Resultados por partición de la validación leave-one-subject-out. {#tab:
 
 ![Exactitud por persona en la validación leave-one-subject-out. La línea indica la media y la banda, un desvío. En rojo, las personas por debajo de la media menos un desvío.](figuras/fig_loso_por_sujeto.png){ancho=14.5 #fig:loso-sujeto}
 
-**El desvío es un hallazgo, no un defecto de la medición.** Entre la persona con mejor resultado (S07, 91,8 %) y la de peor resultado (S03, 66,7 %) hay 25 puntos. Las únicas dos personas por debajo de la media menos un desvío son S03 y S08, las mismas dos en las que el modelo ya fallaba antes de la regularización. S03 queda además 0,9 puntos por debajo del límite que la regla habitual de 1,5 veces el rango intercuartílico fija en 67,6 %, de modo que califica como valor atípico; no se la descarta, porque la causa está identificada —es una de las dos personas con peor detección de manos del conjunto (sección 14.5)— y excluirla sería ocultar justamente el caso que interesa. La variación es, por lo tanto, una propiedad del problema: el modelo funciona bien para la mayoría de las personas y notablemente peor para dos de ellas. Un número único, obtenido con un reparto que dejara a esas dos personas en el entrenamiento, habría ocultado este comportamiento.
+**Variación entre personas.** Entre la persona con mejor resultado (S07, 91,8 %) y la de peor resultado (S03, 66,7 %) hay 25 puntos. Las únicas dos personas por debajo de la media menos un desvío son S03 y S08, las mismas dos en las que el modelo ya fallaba antes de la regularización. S03 queda además 0,9 puntos por debajo del límite que la regla habitual de 1,5 veces el rango intercuartílico fija en 67,6 %, de modo que califica como valor atípico; no se la descarta, porque la causa está identificada —es una de las dos personas con peor detección de manos del conjunto (sección 14.5)— y excluirla sería ocultar justamente el caso que interesa. La variación es, por lo tanto, una propiedad del problema: el modelo funciona bien para la mayoría de las personas y notablemente peor para dos de ellas. Un número único, obtenido con un reparto que dejara a esas dos personas en el entrenamiento, habría ocultado este comportamiento.
 
 **A qué ejecución corresponde cada análisis.** El resultado principal es el de la configuración definitiva, pero la sección 14.6 reconstruye cómo se llegó a ella: la configuración de referencia, sin regularización, obtenía 79,8 % ± 8,9 %. Los análisis de error por clase (sección 14.4), la asociación con la calidad de la detección (sección 14.5) y la comparación con la línea base no neuronal (sección 14.7.1) se hicieron sobre esa ejecución de referencia, que es la que estaba disponible al momento de hacerlos, y sus conclusiones son cualitativas: qué clases se confunden, qué explica la variación entre personas y cuánto aporta el orden temporal. Cada apartado aclara a qué ejecución corresponde. [[PENDIENTE: repetir el análisis por clase, la correlación con la retención y la comparación con la línea base sobre la ejecución regularizada, para que todo el capítulo informe la misma configuración.]]
 
@@ -124,7 +124,7 @@ Tabla: Comparación entre filtrar los cuadros sin manos y conservar la grilla te
 
 Ocho de las diez personas empeoraron. El desvío baja, pero nivelando hacia abajo: el máximo cae de 89,5 % a 85,9 % mientras el mínimo se mantiene alrededor del 63 %. La correlación entre retención y exactitud apenas cambia (de 0,68 a 0,60), lo que indica que rellenar con ceros no desacopla el desempeño de la calidad de la detección, que era el objetivo.
 
-**Interpretación.** El problema no es que los cuadros se hayan quitado, sino que faltan. Un vector en cero conserva la posición temporal pero no aporta información, y obliga a la red a dedicar capacidad a ignorar un tercio de su entrada; con un modelo que ya sobreajusta, el balance es negativo. La BiLSTM tolera la compresión irregular del tiempo mejor de lo que se suponía. Sólo la persona S08, la de peor retención, mejoró notablemente (+6,5), pero S05, con 65,5 % de retención, empeoró 12,5 puntos, de modo que no hay un patrón. **La representación con cuadros filtrados se mantiene como oficial**, y un relleno de los huecos sólo debería volver a evaluarse con un mecanismo distinto, como la interpolación o una máscara explícita.
+**Interpretación.** Lo que perjudica al modelo es que esos cuadros falten, y rellenarlos con ceros no lo compensa. Un vector en cero conserva la posición temporal pero no aporta información, y obliga a la red a dedicar capacidad a ignorar un tercio de su entrada; con un modelo que ya sobreajusta, el balance es negativo. La BiLSTM tolera la compresión irregular del tiempo mejor de lo que se suponía. Sólo la persona S08, la de peor retención, mejoró notablemente (+6,5), pero S05, con 65,5 % de retención, empeoró 12,5 puntos, de modo que no hay un patrón. **La representación con cuadros filtrados se mantiene como oficial**, y un relleno de los huecos sólo debería volver a evaluarse con un mecanismo distinto, como la interpolación o una máscara explícita.
 
 ### 14.6.2 Regularización y representación con ubicación
 
@@ -135,7 +135,7 @@ Para evaluar rápidamente las técnicas contra el sobreajuste se utilizó la eva
 - **Configuración de referencia**: 64,70 %.
 - **Dropout 0,4** (en lugar de 0,2): 66,56 %, una mejora de 1,9 puntos, presente en las dos personas.
 - **Descarte aleatorio de cuadros con probabilidad 0,30**: 66,38 %, una mejora de 1,7 puntos, también en las dos personas. Es la técnica que simula directamente a una persona con mala detección, el caso en que el modelo falla.
-- **Representación v2 con la ubicación de la muñeca**: 64,26 %, sin mejora.
+- **Representación v2 con la ubicación de la muñeca**: 64,26 %, sin mejora sobre estas dos personas. El LOSO completo, hecho después, cambió esta lectura (sección 14.6.4).
 
 Estos resultados deben leerse con cautela: son dos particiones de diez y las diferencias son pequeñas. Indican qué variantes vale la pena confirmar, no que mejoren el modelo.
 
@@ -158,7 +158,7 @@ Tabla: Efecto de la regularización (dropout 0,4 y descarte de cuadros 0,30) por
 | S07 | 89,5 % | 91,8 % | +2,3 |
 | S08 | 66,3 % | 70,5 % | +4,2 |
 | S09 | 85,5 % | 82,6 % | −3,0 |
-| S10 | 81,8 % | 80,7 % | −1,1 |
+| S10 | 81,9 % | 80,7 % | −1,1 |
 | **Media ± desvío** | **79,8 % ± 8,9 %** | **81,7 % ± 7,9 %** | **+1,9** |
 
 La mejora es de 1,9 puntos y, a diferencia del experimento de la grilla temporal (sección 14.6.1), **no se consigue nivelando hacia abajo**: el mínimo sube de 63,1 % a 66,7 %, el máximo de 89,5 % a 91,8 % y el desvío baja de 8,9 a 7,9. Las dos personas más difíciles, S03 y S08, mejoran 3,5 y 4,2 puntos, que era el objetivo declarado al elegir estas técnicas.
@@ -171,7 +171,11 @@ La interpretación es coherente con el diagnóstico de la sección 14.3: el mode
 
 **Esta es la configuración definitiva del trabajo.** Se adopta como tal por tres razones: está medida con el mismo protocolo que la de referencia, mejora tanto la media como la dispersión, y es la que ya sirve el sistema. En consecuencia, el resultado principal que informa la tesina es el 81,7 % ± 7,9 % de la sección 14.2, y la configuración de referencia queda documentada en este capítulo como el punto de partida contra el cual se midieron las mejoras.
 
-El resultado de la representación v2 merece un comentario. Que agregar la ubicación no mejore, cuando el análisis de confusiones sugiere que la ubicación es la información faltante, tiene al menos dos explicaciones posibles: que la posición de la muñeca en el encuadre no sea una buena medida de la ubicación respecto del cuerpo, o que las dos personas evaluadas fallen por la detección y no por la ubicación. Distinguir ambas requiere evaluar v2 con el LOSO completo y, eventualmente, una representación de la ubicación relativa al cuerpo.
+### 14.6.4 La representación con ubicación (v2) en el LOSO completo
+
+La evaluación parcial de la sección 14.6.2 sólo miraba a S03 y S08, que fallan sobre todo por la detección de las manos. Con el LOSO completo y la configuración definitiva, v2 sí mejora: **83,4 % ± 7,2 %**, contra 81,0 % ± 6,1 % de v1, con mejora en ocho de las diez personas (McNemar p < 0,001; Wilcoxon p = 0,08). Ambas ejecuciones se hicieron en un segundo equipo, con GPU, y por la regla de la sección 10.4 se comparan entre sí y no con el 81,7 % de la sección 14.2. Con v2, además, la ventaja de la red sobre un bosque aleatorio con el mismo resumen sube a 2,8 puntos y pasa a ser consistente por persona (Wilcoxon p = 0,008). En ese mismo equipo, agregar ruido gaussiano y cambio de escala temporal empeoró ambas representaciones.
+
+**v2 no se adoptó como resultado principal** por dos razones: el backend genera vectores v1 y rechaza un modelo v2 (sección 9.6), y v2 mide la posición de la muñeca respecto del encuadre, que en LSA64 es fijo pero con una cámara web cambia de persona a persona. Queda como la mejora con más respaldo para continuar el trabajo, idealmente con la ubicación expresada respecto del cuerpo. Los reportes son `ml/reports/loso_ref_gpu.json`, `loso_v2_gpu.json`, `comparacion_v2_v1.json` y `comparacion_v2_rf2.json`.
 
 ## 14.7 Comparación con los antecedentes
 
@@ -196,7 +200,7 @@ Tabla: Comparación pareada entre la BiLSTM y la línea base de bosque aleatorio
 | S07 | 89,5 % | 86,8 % | +2,6 |
 | S08 | 66,3 % | 72,4 % | −6,1 |
 | S09 | 85,5 % | 84,5 % | +1,0 |
-| S10 | 81,8 % | 73,7 % | +8,2 |
+| S10 | 81,9 % | 73,7 % | +8,2 |
 | **Media ± desvío** | **79,8 % ± 8,9 %** | **78,2 % ± 7,5 %** | **+1,6** |
 
 ![Exactitud por persona de la BiLSTM y de la línea base de bosque aleatorio (izquierda) y diferencia entre ambas (derecha). En naranja, las dos personas en que el bosque supera a la red.](figuras/fig_baseline_rf.png){ancho=15 #fig:baseline}
@@ -221,7 +225,7 @@ Esa lectura es falsa, o al menos no se puede sostener con los datos. Para compro
 
 Ninguna de las dos es significativa, y las dos apuntan en la dirección **contraria** a la esperada. Separando las clases en tercios por recorrido, el tercio que más se mueve muestra una ventaja media de −1,6 puntos para la red y el que menos se mueve, de +3,2 (Mann-Whitney en la dirección de la hipótesis: p = 0,94).
 
-La conclusión es que las diez señas citadas más arriba son los extremos de una distribución ruidosa, y que la narrativa de "trayectoria contra configuración" se construyó sobre ellas después de verlas. La pequeña ventaja de la BiLSTM existe, pero **no se explica por cuánto se mueve la seña**: queda sin explicar, que es un estado más honesto que una explicación plausible sin respaldo.
+La conclusión es que las diez señas citadas más arriba son los extremos de una distribución ruidosa, y que la narrativa de "trayectoria contra configuración" se construyó sobre ellas después de verlas. La pequeña ventaja de la BiLSTM existe, pero **no se explica por cuánto se mueve la seña**, y con los datos disponibles queda sin explicar.
 
 Vale aclarar una limitación de la medición: el recorrido está en coordenadas del encuadre y no del cuerpo, y proviene de un caché distinto (v2) del que entrenó a los modelos (v1). Sobre el mismo dataset y las mismas clases alcanza para ordenar las señas de menos a más movimiento, que es lo que la correlación necesita, pero no es una medida fonológica de movimiento. El análisis se reproduce con `python ml/analizar_movimiento.py` y el reporte queda en `ml/reports/movimiento_por_clase.json`.
 
@@ -245,24 +249,26 @@ La exactitud del LOSO mide la capacidad del modelo para clasificar una seña com
 2. **Segmentación.** En el entrenamiento, cada secuencia es exactamente una seña, de principio a fin. En la aplicación no se sabe dónde empieza y termina una seña: la sesión clasifica una ventana deslizante de los últimos 8 cuadros con manos detectadas (sección 11.5), que puede contener el final de una seña, el comienzo de otra o una transición.
 3. **Condiciones de captura.** LSA64 se grabó con fondo blanco, ropa negra, guantes de color e iluminación controlada. Una cámara web doméstica captura escenas más variadas.
 
-Ninguno de estos aspectos se refleja en la cifra del LOSO, y es esperable que el desempeño percibido en la aplicación sea menor. Para reducir esta brecha se prevén tres acciones: (a) alinear la frecuencia, enviando a 15 cuadros por segundo o volviendo a entrenar con un muestreo equivalente al del cliente; (b) reemplazar la ventana fija por una segmentación según la presencia de las manos, que acumule la seña completa y la clasifique al bajar las manos; y (c) medir el desempeño real con un protocolo simple: un conjunto de señas realizadas frente a la cámara por personas que no estén en LSA64, registrando aciertos, errores y señas no detectadas. [[PENDIENTE: implementar estas acciones y reportar aquí sus resultados.]]
+Ninguno de estos aspectos se refleja en la cifra del LOSO, y es esperable que el desempeño percibido en la aplicación sea menor. Para reducir esta brecha se prevén dos acciones: (a) alinear la frecuencia, enviando a 15 cuadros por segundo o volviendo a entrenar con un muestreo equivalente al del cliente; y (b) reemplazar la ventana fija por una segmentación según la presencia de las manos, que acumule la seña completa y la clasifique al bajar las manos. [[PENDIENTE: implementar estas dos acciones y reportar aquí sus resultados.]]
+
+Medir esa brecha requiere probar el sistema con personas usuarias de LSA ajenas al conjunto de datos, una prueba que no forma parte de este trabajo (sección 1.5).
 
 ## 14.9 Discusión
 
 Los resultados permiten extraer algunas conclusiones sobre el modelo y sobre el proceso.
 
-**El protocolo de evaluación determina la cifra.** La misma familia de modelos obtiene valores cercanos al 99 % o en torno al 75 % según se mezclen o no las personas entre entrenamiento y prueba (Capítulo 5). En este trabajo, un reparto único habría permitido informar 86 % eligiendo, sin malicia, la ejecución más favorable. La cifra que se informa, 81,7 % ± 7,9 %, es menor, pero es la que corresponde al uso real del sistema: reconocer a personas que el modelo nunca vio.
+**El protocolo de evaluación determina la cifra.** Con el mismo modelo y los mismos datos, Marais et al. (2022) pasan de 97 % a 74 % según se mezclen o no las personas entre entrenamiento y prueba (Capítulo 5). En este trabajo, un reparto único habría permitido informar 86 % eligiendo, sin malicia, la ejecución más favorable. La cifra que se informa, 81,7 % ± 7,9 %, es menor, pero es la que corresponde al uso real del sistema: reconocer a personas que el modelo nunca vio.
 
 **La calidad de la detección es el principal factor limitante.** La exactitud por persona se asocia con la retención de cuadros, las clases con peor desempeño son en buena medida las que más datos perdieron, y las señas bimanuales, con dos manos que detectar, funcionan peor. Mejorar la detección —con otros umbrales, con el modo de seguimiento de MediaPipe o con la recuperación de los videos descartados— tiene, probablemente, más potencial que modificar la red.
 
-**La ubicación es la información faltante más plausible.** Las confusiones apuntan a señas que difieren en la ubicación, y la representación v1 descarta ese parámetro por diseño. La primera prueba de agregarlo no dio resultado, pero la prueba fue parcial y la representación de la ubicación, mejorable.
+**La ubicación es información que falta.** Las confusiones apuntan a señas que difieren en la ubicación, y la representación v1 descarta ese parámetro por diseño. La evaluación parcial de v2 no mostró mejora, pero el LOSO completo sí: 2,4 puntos más, en ocho de diez personas (sección 14.6.4). La representación de la ubicación respecto del encuadre es, de todos modos, una aproximación, y por eso v2 no reemplazó a v1 en el sistema.
 
-**El orden temporal aporta menos de lo esperado.** La línea base de bosque aleatorio, que descarta el tiempo por construcción, queda a 1,6 puntos de la BiLSTM (sección 14.7.1). La ventaja de la red es estadísticamente detectable a nivel de muestra pero no a nivel de persona, y ambos modelos coinciden en tres de cada cuatro predicciones. El resultado reorienta dónde buscar mejoras: en las características, no en el clasificador. Tampoco se encontró en qué tipo de seña se concentra esa ventaja: ni el desplazamiento de la mano ni el cambio de configuración la explican.
+**El orden temporal aporta menos de lo esperado.** La línea base de bosque aleatorio, que descarta el tiempo por construcción, queda a 1,6 puntos de la BiLSTM (sección 14.7.1). La ventaja de la red es estadísticamente detectable a nivel de muestra pero no a nivel de persona, y ambos modelos coinciden en tres de cada cuatro predicciones. El resultado reorienta dónde buscar mejoras: en las características, no en el clasificador. La variante v2 lo confirma: al agregar la ubicación, la ventaja de la red sobre el bosque sube a 2,8 puntos y pasa a ser consistente por persona. Tampoco se encontró en qué tipo de seña se concentra esa ventaja: ni el desplazamiento de la mano ni el cambio de configuración la explican.
 
-**Conviene medir las explicaciones, no sólo los resultados.** La lectura intuitiva de por qué la red le gana al bosque —las señas de trayectoria— encajaba con los ejemplos y resultó no tener respaldo al medirla sobre las 64 clases. Es la misma clase de error que la hipótesis de la grilla temporal, y en los dos casos lo que lo evitó fue convertir la intuición en un número.
+**La explicación intuitiva de la ventaja de la red no se sostuvo.** La lectura intuitiva de por qué la red le gana al bosque —las señas de trayectoria— encajaba con los ejemplos y resultó no tener respaldo al medirla sobre las 64 clases. Es la misma clase de error que la hipótesis de la grilla temporal, y en los dos casos lo que lo evitó fue convertir la intuición en un número.
 
-**Los resultados negativos también son resultados.** La hipótesis de la grilla temporal era razonable y resultó falsa. Haberla evaluado con un protocolo riguroso evitó adoptar un cambio que empeoraba el modelo en 3,3 puntos, y dejó documentado por qué no conviene volver a proponerlo en su forma simple.
+**La hipótesis de la grilla temporal resultó falsa.** Era razonable, y haberla evaluado con un protocolo riguroso evitó adoptar un cambio que empeoraba el modelo en 3,3 puntos, y dejó documentado por qué no conviene volver a proponerlo en su forma simple.
 
 ## 14.10 Síntesis
 
-El modelo alcanza una exactitud independiente del sujeto de 81,7 % ± 7,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Esa cifra corresponde a la configuración definitiva, con dropout 0,4 y descarte aleatorio de cuadros: la regularización mejoró en 1,9 puntos el 79,8 % ± 8,9 % de la configuración de referencia, subiendo el piso y bajando la dispersión, y es la configuración con la que se reentrenó el modelo servido. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red de referencia: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo. La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que deberá medirse y reducirse en la etapa final del proyecto.
+El modelo alcanza una exactitud independiente del sujeto de 81,7 % ± 7,9 % sobre las 64 señas de LSA64, con una variación entre personas que está asociada con la calidad de la detección de las manos. Corresponde a la configuración definitiva, que mejoró en 1,9 puntos el 79,8 % ± 8,9 % de la de referencia y es la del modelo servido. Las confusiones se concentran en señas que comparten configuración. Una línea base de bosque aleatorio que ignora el orden temporal alcanza 78,2 % ± 7,5 %, a 1,6 puntos de la red de referencia: con esta representación el tiempo aporta poco, y el margen de mejora está en las características antes que en el clasificador. Preservar la grilla temporal con ceros empeora el modelo. Agregar la ubicación de la muñeca (v2) lo mejora en 2,4 puntos, pero el sistema todavía no la usa (sección 14.6.4). La principal limitación del sistema es la diferencia entre las condiciones del entrenamiento y las del uso en tiempo real, que este trabajo describe pero no llega a cuantificar.

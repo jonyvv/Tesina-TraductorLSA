@@ -54,7 +54,7 @@ Tabla: Casos de uso principales. {#tab:casos}
 
 ## 8.4 Señas estáticas y dinámicas
 
-Una decisión temprana del diseño fue tratar como problemas distintos el reconocimiento de configuraciones estáticas y el de señas con movimiento. El prototipo de escritorio que sirvió de punto de partida intentaba representar ambos con un mismo esquema, lo que en la práctica impedía entrenar correctamente cualquiera de los dos.
+Una decisión temprana del diseño fue tratar como problemas distintos el reconocimiento de configuraciones estáticas y el de señas con movimiento. El prototipo de escritorio que sirvió de punto de partida intentaba representar ambos con un mismo esquema, lo que en la práctica impedía entrenar correctamente cualquiera de los dos. [[PENDIENTE: citar el origen del prototipo (autor y repositorio) y agregarlo a la bibliografía.]]
 
 - **Configuraciones estáticas** (como la mayoría de las letras del alfabeto manual): un único cuadro contiene toda la información. Cada muestra es un vector de 138 valores y el problema es una clasificación tabular. Se resuelve con un bosque aleatorio o un perceptrón multicapa, que se entrenan y comparan con el script `ml/train.py`.
 - **Señas dinámicas** (como las de LSA64): la información está en la evolución temporal. Cada muestra es una secuencia de vectores de longitud variable y se resuelve con una BiLSTM (Capítulo 10).
@@ -80,7 +80,7 @@ Con un único módulo importado por ambos lados, ese tipo de divergencia es impo
 
 ## 8.6 Modelo de clases del backend
 
-La @tab:clases presenta las clases del backend y sus responsabilidades. El diseño parte de un diagrama de clases elaborado al inicio del proyecto, con dos modificaciones que se justifican a continuación.
+La @tab:clases presenta las clases del backend y sus responsabilidades. El diseño parte de un diagrama de clases elaborado al inicio del proyecto, con dos modificaciones que se justifican a continuación. Los nombres de las clases se conservaron tal como figuraban en ese diagrama, incluido el de `ModeloLSE`, aunque la clase sirve cualquier modelo de LSA.
 
 Tabla: Clases del backend y sus responsabilidades. {#tab:clases}
 

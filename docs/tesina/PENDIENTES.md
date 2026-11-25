@@ -1,27 +1,24 @@
 # Qué falta completar en la tesina
 
-_Al 17/11/2026, sobre `salida/Tesina-TraductorLSA.docx` (121 páginas, 34.370 palabras)._
+_Al 24/11/2026, sobre `salida/Tesina-TraductorLSA.docx` (120 páginas, 34.679 palabras)._
 
-Hay **17 huecos** en los capítulos, más el nombre del profesor de Metodología en la carátula
-(decisión 4), y **5 decisiones** que no dependen de ningún dato. Los huecos aparecen **resaltados en
+Hay **16 huecos** en los capítulos y **3 decisiones** abiertas. Los huecos aparecen **resaltados en
 amarillo** en el Word, así que se los puede recorrer abriendo el archivo y buscando el resaltado;
-`python docs/tesina/build/verificar.py` lista los 17 de los capítulos en orden.
+`python docs/tesina/build/verificar.py` lista los 16 en orden.
 
-Este archivo los agrupa de otra manera: **por la acción que los cierra**. Casi todos los huecos no
-son 17 tareas distintas, son 6 tareas que tapan varios huecos cada una. Las decisiones van primero
-porque dos de ellas cambian qué hay que escribir.
+Este archivo los agrupa por la acción que los cierra. Las decisiones van primero porque cambian
+qué hay que escribir.
 
 ---
 
-## 1. Decisiones (no hace falta medir nada)
+## 1. Decisiones
 
 | # | Decisión | Estado | Por qué importa |
 |---|---|---|---|
-| **1** | **El documento quedó en 121 páginas** y el rango pedido es 90–120 | Abierta | Antes de la alineación con el anteproyecto v3 estaba exactamente en 120. Para bajar una página hay que recortar unas 250 palabras de texto existente, o preguntarle a Mirallas si acepta 121. Va junto con la consulta del interlineado (D2), que sigue sin respuesta: con interlineado doble el documento da 144 páginas. |
-| **2** | **El título difiere del anteproyecto** | Abierta | Anteproyecto: "Sistema de traducción de lenguaje de señas LSA con inteligencia artificial". Tesina: "Sistema de traducción de Lengua de Señas Argentina a texto en tiempo real mediante inteligencia artificial". Hay que unificarlo con el tutor; cambiar el título de la tesina no es una decisión del equipo. |
-| **3** | **¿Las *features* v2 pasan a ser el resultado principal?** | Abierta | Las corridas del 12/11 dan **83,4 % ± 7,2 %** con v2 (`ml/reports/loso_v2_gpu.json`) contra 81,7 % ± 7,9 % con v1, y la ventaja sobre el bosque aleatorio sube de 1,6 a 2,8 puntos, ganando en 8 de 10 sujetos (`comparacion_v2_rf2.json`). El documento informa v1 porque **el modelo servido sigue en `feature_version: v1`**. Si se adopta v2 hay que reentrenar el `.pt`, cambiar el modelo servido y reescribir 14.2, 14.7.1, 14.10 y las conclusiones. Si no, conviene al menos mencionar v2 en 14.6 como resultado medido. |
-| **4** | **Nombre del/la profesor/a de Metodología** | Abierta | Va en la carátula. Se completa en `build/build.js`, constante `META.metodologia`. Es el único hueco que no está en los capítulos. |
-| **5** | **Cliente sin React** (D3 del plan) | Resuelta en el texto, sin validar | 8.8.2 justifica la decisión y el anteproyecto v3 la respalda en su B.6. Falta el visto del tutor. |
+| **1** | **Extensión: el documento quedó en 120 páginas**, el máximo del rango 90–120 | Resuelta, pero justa | Se llegó a 120 el 24/11 sacando el Abstract y recortando frases redundantes en los capítulos 4, 5, 6, 10, 12, 14 y en las conclusiones, que derramaban 2 a 7 renglones a una página nueva. **Cualquier texto que se agregue puede volver a pasarse**: después de cada cambio, mirar el número que imprime `postproceso.ps1`. Sigue sin respuesta la consulta del interlineado (con doble, el documento da unas 144 páginas). |
+| **2** | **El título difiere del anteproyecto** | Abierta | Anteproyecto: "Sistema de traducción de lenguaje de señas LSA con inteligencia artificial". Tesina: "Sistema de traducción de Lengua de Señas Argentina a texto en tiempo real mediante inteligencia artificial". Hay que unificarlo con el tutor. |
+| **3** | **¿v2 pasa a ser el resultado principal?** | Abierta | La tesina ya informa v2 en la sección 14.6.4 como resultado medido: 83,4 % ± 7,2 % contra 81,0 % ± 6,1 % de v1 **en el mismo equipo con GPU** (`comparacion_v2_v1.json`), y explica por qué el principal sigue siendo v1 (el backend no genera v2 y la ubicación depende del encuadre). Adoptarla implica cambiar el preprocesamiento del backend, reentrenar el `.pt` y reescribir 14.2, 14.10, el resumen y las conclusiones. |
+| **4** | **Cliente sin React** | Resuelta en el texto, sin validar | 8.8.2 justifica la decisión y el anteproyecto v3 la respalda en su B.6. Falta el visto del tutor. |
 
 ---
 
@@ -29,98 +26,75 @@ porque dos de ellas cambian qué hay que escribir.
 
 ### A. Desplegar el sistema — **Leandro**
 
-Cierra 3 huecos y es lo que más desbloquea.
-
 | Hueco | Qué dato hay que traer |
 |---|---|
 | **13.4 Despliegue** | La dirección pública de la interfaz, los pasos seguidos y la latencia medida contra el servicio expuesto por el túnel. |
 | **Conclusiones, punto 5** | Una línea con el resultado del despliegue. |
-| **13.3.1 Tamaño de la imagen** | Construir la imagen y anotar su tamaño final (el `Dockerfile` ya instala PyTorch-CPU). |
 
-El esquema ya está decidido y documentado: interfaz estática + servicio de inferencia local expuesto
-con un túnel. En el código ya están resueltas las dos piezas que hacían falta: la dirección
-configurable del backend (`frontend/config.js`, `frontend/app.js:37`) y la validación de orígenes
-tanto en HTTP como en el WebSocket (`LSA_CORS_ORIGINS`).
+La imagen ya está construida y probada: `docker run --rm -p 8000:8000 traductor-lsa` levanta el
+servicio que va detrás del túnel. La dirección configurable del backend (`frontend/config.js`) y la
+validación de orígenes (`LSA_CORS_ORIGINS`) ya están hechas.
 
-Tres cosas de ngrok a tener en cuenta (según su documentación de la capa gratuita, consultada el
-17/11):
+Tres cosas de ngrok a tener en cuenta (documentación de la capa gratuita, consultada el 17/11):
 
-- **El dominio es fijo.** Cada cuenta gratuita tiene un dominio asignado que no cambia al reiniciar
-  el túnel, así que `config.js` se configura una sola vez. La tesina (2 y 13.4) ya lo dice así.
-- **Página de aviso para navegadores.** La capa gratuita intercala una página de advertencia delante
-  del tráfico que viene de un navegador. Si los `fetch` del cliente a `/health` y `/model/info`
-  reciben ese HTML en lugar del JSON, hay que mandarles el encabezado `ngrok-skip-browser-warning`
-  (el backend ya acepta cualquier encabezado en CORS, `backend/app/main.py:153`). Probarlo al
-  desplegar; con el WebSocket la documentación no dice nada.
+- **El dominio es fijo**, así que `config.js` se configura una sola vez.
+- **Página de aviso para navegadores.** Si los `fetch` a `/health` y `/model/info` reciben ese HTML
+  en lugar del JSON, hay que mandarles el encabezado `ngrok-skip-browser-warning`.
 - **Cupos.** 1 GB de transferencia y 20 000 pedidos HTTP por mes.
 
-### B. Medir la latencia real — **Leandro**, después de A
+### B. Tiempo real — **Leandro**, después de A
 
 | Hueco | Qué dato hay que traer |
 |---|---|
-| **14.8.1 Latencia** | Una tabla con latencia total, cómputo del servidor y tiempo de red, en tres escenarios (servidor local, red local, desplegado) y a 8 y 15 cuadros por segundo. Los números salen del panel de rendimiento del cliente. |
+| **14.8.1 Latencia** | Tabla con latencia total, cómputo del servidor y tiempo de red, en tres escenarios (local, red local, desplegado) y a 8 y 15 fps. Primera medición del 17/11, local sin Docker, a 8 fps: **23 ms total, 21 ms servidor, 2 ms red**. |
+| **14.8.2 Brecha con el uso en tiempo real** | Implementar las dos acciones previstas: (a) alinear la frecuencia de muestreo entre entrenamiento y uso y (b) segmentar según la presencia de las manos en lugar de la ventana fija. |
 
-### C. Capturas de la aplicación funcionando — **Leandro**
-
-Cuatro capturas tapan 2 huecos de la tesina y los 4 espacios reservados del Anexo B.8 del
-anteproyecto. Es el hueco que más se nota en una defensa: las tesinas aprobadas de la carpeta tienen
-muchas capturas en la parte de implementación.
+### C. Capturas — **Leandro**
 
 | Hueco | Qué falta |
 |---|---|
-| **12.1 Estructura** | Captura con la cámara activa, el esqueleto dibujado y una seña reconocida. |
-| **12.7 Diseño adaptable** | Verificar la interfaz en un teléfono real. En la prueba con navegador sin interfaz gráfica, a 400 px de ancho, algunos paneles parecían desbordar a la derecha: si desborda, es un arreglo de CSS, no sólo una captura. |
+| **12.1 Estructura** | Captura con la cámara activa, el esqueleto dibujado y una seña reconocida, sin otras personas de fondo (`figuras/cap_interfaz_camara.png`). Señas que el modelo reconoce mejor: Verde, Dónde, Dulce de leche, Agua y Rojo. |
+| **12.7 Diseño adaptable** | Probar en un teléfono real con la cámara, **después del despliegue** (sin HTTPS el teléfono no da acceso a la cámara). |
+| **7.1.2 Tablero Kanban** | Captura del tablero de Trello. La herramienta ya figura en el texto. |
 
-### D. Cerrar el capítulo de resultados sobre una sola ejecución — **Jonatan**
-
-Son 4 huecos y todos tienen la misma raíz: parte de los análisis se hicieron sobre la ejecución de
-referencia (sin regularizar, 79,8 %) porque era la que estaba disponible en ese momento, y el
-resultado principal es el de la ejecución regularizada (81,7 %).
+### D. Capítulo de resultados sobre una sola ejecución — **Jonatan**
 
 | Hueco | Qué dato hay que traer |
 |---|---|
-| **14.2 Resultado principal** | Repetir sobre la ejecución regularizada: el análisis por clase (14.4), la correlación con la retención (14.5) y la comparación con la línea base (14.7.1), para que todo el capítulo informe la misma configuración. |
-| **14.4.2 Matriz de confusión** | Mirar los videos de LSA64 par por par y confirmar si las señas más confundidas comparten configuración manual y difieren en ubicación; ilustrarlo con una figura. |
-| **14.7.2** (tarea M4) | Describir en qué se parecen las señas que el sistema confunde. Ojo: **no** es para confirmar la hipótesis de la ventaja temporal, que quedó descartada. |
-| **9.10 Calidad de la detección** | Probar umbrales de detección más bajos y el **modo VIDEO** de MediaPipe (que sigue la mano entre cuadros) y medir cuántas secuencias se recuperan. Es la mejora con más potencial según el propio capítulo 14. |
+| **14.2 Resultado principal** | Repetir sobre la ejecución regularizada el análisis por clase (14.4), la correlación con la retención (14.5) y la comparación con la línea base (14.7.1). |
+| **14.4.2 Matriz de confusión** | Mirar los videos de LSA64 par por par y confirmar si las señas más confundidas comparten configuración y difieren en ubicación; ilustrarlo con una figura. |
+| **14.7.2** | Describir en qué se parecen las señas que el sistema confunde. |
+| **9.10 Calidad de la detección** | Probar umbrales más bajos y el modo VIDEO de MediaPipe y medir cuántas secuencias se recuperan. |
 
-Si se adopta v2 (decisión 3), este bloque hay que hacerlo sobre v2 y no sobre la ejecución
-regularizada de v1. Conviene decidir 3 antes de empezar D.
+Si se adopta v2 (decisión 3), este bloque hay que hacerlo sobre v2.
 
-### E. Evaluación con personas reales — **los dos**
-
-Dos huecos, y es el único que necesita gente ajena al equipo. Tiene un costo de coordinación que
-conviene arrancar temprano, no al final.
-
-| Hueco | Qué falta |
-|---|---|
-| **14.8.2 Brecha con el uso en tiempo real** | Implementar las tres acciones previstas: (a) alinear la frecuencia de muestreo entre entrenamiento y uso, (b) reemplazar la ventana fija por una segmentación según la presencia de las manos, (c) medir el desempeño con señas hechas frente a la cámara por personas que no estén en LSA64, registrando aciertos, errores y señas no detectadas. |
-| **1.5 Consideraciones éticas** | La prueba con personas usuarias de LSA, con consentimiento informado. El protocolo y los resultados se describen en 14.8.2, así que este hueco se cierra solo cuando se cierra el otro. |
-
-### F. Trámites y forma — **los dos**
-
-Cinco huecos sueltos, ninguno depende de nada. Son los más rápidos de cerrar.
+### E. Trámites y forma — **los dos**
 
 | Hueco | Qué falta | Quién |
 |---|---|---|
-| **Agradecimientos** | Redacción final; hoy hay un borrador. | Los dos |
-| **Anexo C** | La dirección de la carpeta compartida "Fuentes del proyecto" que exige la facultad. | Leandro |
-| **Anexo A** | Una figura con señas de ejemplo tomadas de los videos de LSA64 (licencia CC BY-NC-SA 4.0, citando la fuente), en particular de los pares más confundidos. | Jonatan |
-| **7.1.2 Tablero Kanban** | Indicar qué herramienta se usó para el tablero e incluir una captura. | Los dos |
-| **13.1.3** | Configurar la ejecución automática de las pruebas en cada envío al repositorio (GitHub Actions). No es imprescindible para la entrega, pero es una línea que suma en calidad. | Leandro |
+| **Agradecimientos** | Redacción final con palabras propias; hoy hay un borrador. | Los dos |
+| **8.4 Prototipo de escritorio** | Citar de dónde salió (autor y repositorio) y agregarlo a la bibliografía. Si es código de terceros y no se cita, es lo primero que puede preguntar un jurado. | Los dos |
+| **Anexo C** | La dirección de la carpeta compartida "Fuentes del proyecto". | Leandro |
+| **Anexo A** | Figura con señas de ejemplo de LSA64 (CC BY-NC-SA 4.0, citando la fuente). | Jonatan |
+| **13.1.3** | Ejecución automática de las pruebas con GitHub Actions. | Leandro |
+
+Fuera del documento, pero visible en el repositorio:
+
+- **Jonatan tiene que configurar su nombre en git** (`git config --global user.name "Jonatan Videla"`
+  y su mail). 26 de los 39 commits figuran como "Your Name".
+- **Licencia.** El repositorio no tiene `LICENSE`. La tesina dice "código publicado en un
+  repositorio público", no "código abierto"; si se agrega una licencia (por ejemplo MIT), se puede
+  volver a decir "código abierto".
 
 ---
 
 ## 3. Orden sugerido
 
-1. **Decisiones 1 a 4.** La 3 (v2) cambia el bloque D y parte del capítulo 14; la 1 y la 2 van en la
-   misma consulta al tutor.
-2. **E (coordinación de la prueba con personas)** en paralelo con todo lo demás, porque depende de
-   terceros.
-3. **A → B → C.** El despliegue habilita la latencia "desplegado" y las capturas conviene sacarlas
+1. **Decisiones 2 y 3** con el tutor, en la misma consulta.
+2. **A → B → C.** El despliegue habilita la latencia "desplegado" y las capturas conviene sacarlas
    del sistema ya publicado.
-4. **D**, una vez decidido si es sobre v1 regularizado o sobre v2.
-5. **F** en los huecos muertos, y la regeneración final del documento.
+3. **D**, una vez decidido si es sobre v1 regularizado o sobre v2.
+4. **E** en los huecos muertos, y la regeneración final del documento.
 
 Después de cualquier cambio en los capítulos:
 
@@ -131,19 +105,30 @@ cd docs/tesina/build && node build.js && powershell -ExecutionPolicy Bypass -Fil
 
 `postproceso.ps1` imprime la cantidad de páginas: **hay que mirar ese número** (decisión 1).
 
+El Google Doc del Drive es una copia del `.docx`: los cambios se hacen en los `.md`, se regenera el
+Word y se sube como nueva versión del mismo archivo en Drive. Lo que se edite a mano en el Drive se
+pierde en la próxima regeneración si no se pasa a los `.md`.
+
 ---
 
 ## 4. Lo que ya NO es un hueco
 
-Para que no se vuelva a escribir como pendiente algo que está hecho:
-
-- **La dirección configurable del backend.** El anteproyecto v3 (B.5) la declara pendiente, pero ya
-  está implementada: `frontend/config.js` y `frontend/app.js:37`.
-- **PyTorch sólo para CPU.** Está en el `Dockerfile:38` de esta rama; lo único que falta es anotar el
-  tamaño de la imagen.
-- **La línea base no neuronal.** Medida: 78,2 % ± 7,5 % con el mismo protocolo (14.7.1). El Gantt la
-  tenía como pendiente y se corrigió.
-- **El abecedario.** Salió del alcance (anteproyecto v3), así que ya no es algo que falte: el pipeline
-  queda documentado en 9.8 y el abecedario completo, en "Futuro del proyecto".
-- **Los beneficios económicos y académicos del anteproyecto.** Están escritos; la marca de pendiente
-  que quedó arriba en `anteproyecto-v3.docx` es una marca vencida y hay que borrarla de ese `.docx`.
+- **El Abstract** se sacó (decisión del 24/11): el documento lleva sólo el Resumen en castellano.
+- **El agradecimiento al LIDI** se sacó de Agradecimientos (24/11); LSA64 se sigue citando en el
+  texto.
+- **La prueba con personas usuarias de LSA** quedó fuera del alcance (24/11): no se hace ni antes
+  de la entrega ni en la mesa final. La tesina lo declara como limitación en 1.5 y 14.8.2, y como
+  trabajo futuro en las conclusiones.
+- **La profesora de Metodología**: Elisa Galdame, en la carátula (`build/build.js`).
+- **La herramienta del tablero Kanban**: Trello (7.1.2 y tabla de herramientas). Falta sólo la
+  captura.
+- **Las inconsistencias con el repositorio** corregidas el 24/11: 132 pruebas (no 116), MediaPipe
+  0.10.35, reproducibilidad sólo dentro del mismo equipo, capítulo 10 y Anexo B con la configuración
+  del modelo servido, tiempos de entrenamiento ("pocos minutos", no "segundos"), S10 = 81,9 %,
+  convención de commits desde agosto, pruebas desde agosto, Scrum descripto como se aplicó, citas
+  de Mindlin parafraseadas (sin comillas, no necesitan página).
+- **La dirección configurable del backend**: `frontend/config.js` y `frontend/app.js:37`.
+- **La imagen de Docker (13.3.1)**: 1,9 GB sin comprimir, 571 MB comprimida, responde a `/health` a
+  los ~15 s.
+- **La línea base no neuronal**: 78,2 % ± 7,5 % con el mismo protocolo (14.7.1).
+- **El abecedario**: salió del alcance; el pipeline queda documentado en 9.8.
